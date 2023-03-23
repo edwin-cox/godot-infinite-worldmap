@@ -1,0 +1,35 @@
+[gd_scene load_steps=4 format=3 uid="uid://ck8uxl47sv5kl"]
+
+[ext_resource type="Script" path="res://fullscript/world_map.gd" id="1_q1jmo"]
+[ext_resource type="Shader" path="res://fullscript/world_map.gdshader" id="2_vt53j"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_opsv0"]
+shader = ExtResource("2_vt53j")
+
+[node name="WorldMap" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_q1jmo")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+custom_minimum_size = Vector2(50, 50)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+
+[node name="MapContainer" type="ColorRect" parent="HBoxContainer"]
+material = SubResource("ShaderMaterial_opsv0")
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Panel" type="Panel" parent="HBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
