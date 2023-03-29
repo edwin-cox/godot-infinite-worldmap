@@ -33,3 +33,9 @@ size_flags_horizontal = 3
 [node name="Panel" type="Panel" parent="HBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
+
+[node name="fast_rendering_timer" type="Timer" parent="."]
+wait_time = 0.5
+one_shot = true
+
+[connection signal="timeout" from="fast_rendering_timer" to="." method="start_update" binds= [true]]

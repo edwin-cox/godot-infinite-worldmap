@@ -2,44 +2,78 @@ extends Node
 
 class_name BiomeGenerator
 
-const COLDEST = 0.05;
-const COLDER = 0.18;
-const COLD = 0.4;
-const WARM = 0.5;
-const WARMER = 0.7;
+const COLDEST = 12;
+const COLDER = 46;
+const COLD = 102;
+const WARM = 127;
+const WARMER = 178;
 
-const DRYEST = 0.27;
-const DRYER = 0.4;
-const DRY = 0.6;
-const WET = 0.8;
-const WETTER = 0.9;
-const WETTEST = 1.0;
+const DRYEST = 69;
+const DRYER = 102;
+const DRY = 153;
+const WET = 204;
+const WETTER = 230;
+const WETTEST = 255;
 
-const cDeepWater=0.0;
-const cShallowWater=0.1;
-const cSand=0.2;
-const cDesert=0.25;
-const cGrass=0.3;
-const cSavanna=0.35;
-const cForest=0.4;
-const cSeasonalForest=0.45;
-const cBorealForest=0.5;
-const cRainForest=0.55;
-const cRock=0.6;
-const cTundra=0.65;
-const cSnow=0.7;
+const cDeepWater=0;
+const cShallowWater=1;
+const cSand=2;
+const cDesert=3;
+const cGrass=4;
+const cSavanna=5;
+const cForest=6;
+const cSeasonalForest=7;
+const cBorealForest=8;
+const cRainForest=9;
+const cRock=10;
+const cTundra=11;
+const cSnow=12;
 
 
-const altDeepWater=0.45;
-const altShallowWater=0.48;
-const altSand=0.5;
-const altGrass=0.63;
-const altForest=0.75;
-const altRock=0.88;
-const altSnow=1;
+const altDeepWater=115;
+const altShallowWater=123;
+const altSand=127;
+const altGrass=160;
+const altForest=192;
+const altRock=225;
+const altSnow=255;
 
-func get_biome(height:float,heat:float,moisture:float)->float:
-	var result=height
+const COLOR_TABLE={
+	cDeepWater:[0,0,128],
+	cShallowWater:[25,25,150],
+	cSand:[240,240,64],
+	cDesert:[238,218,130],
+	cGrass:[50,220,20],
+	cSavanna:[177,209,110],
+	cForest:[16,160, 0],
+	cSeasonalForest:[73,100, 35],
+	cBorealForest:[95,115, 62],
+	cRainForest:[29,73, 40],
+	cRock:[128,128,128],
+	cTundra:[96,131,112],
+	cSnow:[255,255,255]
+}
+
+static func get_biome_buffer1(height_buffer:PackedByteArray,main_height_buffer:PackedByteArray,heat_buffer:PackedByteArray,moisture_buffer:PackedByteArray)->PackedByteArray:
+	var buffer:=PackedByteArray()
+	for i in range(height_buffer.size()):
+		var main_height := main_height_buffer[i]
+		var height := height_buffer[i]
+		var elevation:int=( min(height*height+height,255) + 2 * main_height*main_height ) / 3
+	#
+		var heat:=heat_buffer[i]
+		var moisture:=moisture_buffer[i]
+		
+		var biome_idx=get_biome(height,heat,moisture)
+		
+		if COLOR_TABLE.has(biome_idx):
+			buffer.append_array(COLOR_TABLE[biome_idx])
+		else:
+			buffer.append_array(COLOR_TABLE[cSnow])
+	
+	return buffer
+
+static func get_biome(height:int,heat:int,moisture:int):
 	if(height<altSand):
 		return getWaterBiotop(height,moisture,heat);
 	elif(height<altForest):
@@ -49,7 +83,7 @@ func get_biome(height:float,heat:float,moisture:float)->float:
 	else:
 		return cSnow;
 
-func getColdBiotop(moisture:float)->float:
+static func getColdBiotop(moisture:int)->int:
 	if(moisture<DRYER):
 		return cGrass
 	elif moisture<DRY:
@@ -57,7 +91,7 @@ func getColdBiotop(moisture:float)->float:
 	else:
 		return cBorealForest;
 
-func getWarmBiotop(moisture:float)->float:
+static func getWarmBiotop(moisture:int)->int:
 	if(moisture<DRYER):
 		return cGrass;
 	elif(moisture<WET):
@@ -67,7 +101,7 @@ func getWarmBiotop(moisture:float)->float:
 	else:
 		return cRainForest;
 
-func getHotBiotop(moisture:float)->float:
+static func getHotBiotop(moisture:int)->int:
 	if(moisture<DRYER):
 		return cDesert;
 	elif(moisture<WET):
@@ -75,7 +109,7 @@ func getHotBiotop(moisture:float)->float:
 	else:
 		return cRainForest;
 
-func getMainlandBiotop(moisture:float, heat:float)->float:
+static func getMainlandBiotop(moisture:int, heat:int)->int:
 	if (heat<COLDEST):
 		return cSnow;
 	elif(heat<COLDER):
@@ -87,7 +121,7 @@ func getMainlandBiotop(moisture:float, heat:float)->float:
 	else:
 		return getHotBiotop(moisture);
 
-func getBeachBiotop(moisture:float, heat:float)->float:
+static func getBeachBiotop(moisture:int, heat:int)->int:
 	if heat<COLDER:
 		return cTundra
 	elif heat<WARMER:
@@ -100,10 +134,85 @@ func getBeachBiotop(moisture:float, heat:float)->float:
 		else:
 			return cGrass
 
-func getWaterBiotop(height:float,moisture:float, heat:float)->float:
+static func getWaterBiotop(height:int,moisture:int, heat:int)->int:
 	if(height<altDeepWater):
 		return cDeepWater;
 	elif(height<altShallowWater):
 		return cShallowWater;
 	else:
 		return getBeachBiotop(moisture,heat);
+
+
+
+static func get_biome_buffer(height_buffer:PackedByteArray,main_height_buffer:PackedByteArray,heat_buffer:PackedByteArray,moisture_buffer:PackedByteArray)->PackedByteArray:
+	var buffer:=PackedByteArray()
+	for i in range(height_buffer.size()):
+		var main_height := main_height_buffer[i]
+		var height := height_buffer[i]
+		var elevation:int=( min(height*height+height,255) + 2 * main_height*main_height ) / 3
+	#
+		var heat:=heat_buffer[i]
+		var moisture:=moisture_buffer[i]
+		
+		
+		
+		var biome_idx
+		if(height<altSand):
+			if(height<altDeepWater):
+				biome_idx= cDeepWater;
+			elif(height<altShallowWater):
+				biome_idx= cShallowWater;
+			else:
+				if heat<COLDER:
+					biome_idx= cTundra
+				elif heat<WARMER:
+					biome_idx= cGrass;
+				else:
+					if(moisture<DRYER):
+						biome_idx= cDesert;
+					elif(moisture<WET):
+						biome_idx= cSavanna;
+					else:
+						biome_idx= cGrass
+		elif(height<altForest):
+			if (heat<COLDEST):
+				biome_idx= cSnow;
+			elif(heat<COLDER):
+				biome_idx= cTundra;
+			elif(heat<COLD):
+				if(moisture<DRYER):
+					biome_idx= cGrass
+				elif moisture<DRY:
+					biome_idx= cForest;
+				else:
+					biome_idx= cBorealForest;
+			elif(heat<WARMER):
+				if(moisture<DRYER):
+					biome_idx= cGrass;
+				elif(moisture<WET):
+					biome_idx= cForest;
+				elif(moisture<WETTER):
+					biome_idx= cSeasonalForest;
+				else:
+					biome_idx= cRainForest;
+			else:
+				if(moisture<DRYER):
+					biome_idx= cDesert;
+				elif(moisture<WET):
+					biome_idx= cSavanna;
+				else:
+					biome_idx= cRainForest;
+			
+		elif(height<altRock):
+			biome_idx= cRock;
+		else:
+			biome_idx= cSnow;
+		
+		
+		
+		if COLOR_TABLE.has(biome_idx):
+			buffer.append_array(COLOR_TABLE[biome_idx])
+		else:
+			buffer.append_array(COLOR_TABLE[cSnow])
+	
+	return buffer
