@@ -13,7 +13,7 @@ static func create_session() -> MapSession:
 	session.noise_config=[]
 	session.noise_config.resize(4)
 	
-	session.noise_config[session.noise_idx_elevation]=MapSession.NoiseObject.new(0,6,0.0011,0.5,3.1)
+	session.noise_config[session.noise_idx_elevation]=MapSession.NoiseObject.new(0,6,0.0011,0.5,1.1)
 	session.noise_config[session.noise_idx_main_elevation]=MapSession.NoiseObject.new(0,9,0.0001,1,1)
 	session.noise_config[session.noise_idx_moisture]=MapSession.NoiseObject.new(1,4,0.05,3,0.4)
 	session.noise_config[session.noise_idx_heat]=MapSession.NoiseObject.new(2,4,0.05,3,0.4)

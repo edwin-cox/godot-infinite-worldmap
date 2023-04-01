@@ -48,6 +48,7 @@ func update_map_recursive(res_idx):
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
+	var map_changed=false
 	var offset_change:=Vector2.ZERO
 	if Input.is_action_pressed("ui_up"):
 		offset_change.y=-1
@@ -57,14 +58,24 @@ func _process(delta):
 		offset_change.x=-1
 	elif Input.is_action_pressed("ui_right"):
 		offset_change.x=1
-
-	if offset_change != Vector2.ZERO:
+	if Input.is_action_pressed("zoom_out"):
+		session.zoom*=0.9
+		map_changed=true
+		print(session.zoom)
+	elif Input.is_action_pressed("zoom_in"):
+		session.zoom*=1.1
+		map_changed=true
+		print(session.zoom)
+	
+	map_changed=map_changed or offset_change != Vector2.ZERO
+	
+	if map_changed:
 		image_changed=true
 		$fast_rendering_timer.stop()
 		
 		if current_task_id != 0:
 			thread_cancel[current_task_id]=true
-		session.world_offset += offset_change
+		session.world_offset += offset_change*10/session.zoom
 		start_update(false)
 	else:
 		if image_changed and $fast_rendering_timer.is_stopped():

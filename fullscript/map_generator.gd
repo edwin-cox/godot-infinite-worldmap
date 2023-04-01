@@ -58,16 +58,15 @@ func generate_image(is_cancellable:bool,resolution_idx:int)->ImageTexture:
 	
 	session.update_noises(resolution_idx)
 	
-	var elev_buffer:=get_noise_image(session.noise_idx_elevation,camera_zoomed_size.x,camera_zoomed_size.y)
-	var main_elev_buffer:=get_noise_image(session.noise_idx_main_elevation,camera_zoomed_size.x,camera_zoomed_size.y)
-	var heat_buffer:=get_noise_image(session.noise_idx_heat,camera_zoomed_size.x,camera_zoomed_size.y)
-	var moist_buffer:=get_noise_image(session.noise_idx_moisture,camera_zoomed_size.x,camera_zoomed_size.y)
+#	var elev_buffer:=get_noise_image(session.noise_idx_elevation,camera_zoomed_size.x,camera_zoomed_size.y)
+#	var main_elev_buffer:=get_noise_image(session.noise_idx_main_elevation,camera_zoomed_size.x,camera_zoomed_size.y)
+#	var heat_buffer:=get_noise_image(session.noise_idx_heat,camera_zoomed_size.x,camera_zoomed_size.y)
+#	var moist_buffer:=get_noise_image(session.noise_idx_moisture,camera_zoomed_size.x,camera_zoomed_size.y)
 	
-	var buffer:=BiomeGenerator.get_biome_buffer(elev_buffer,main_elev_buffer,heat_buffer,moist_buffer)
+#	var buffer:=BiomeGenerator.get_biome_buffer(elev_buffer,main_elev_buffer,heat_buffer,moist_buffer)
 	
-	
-	var out:=create_texture_from_buffer(buffer,camera_zoomed_size.x, camera_zoomed_size.y)
-#	var out:=ImageTexture.create_from_image(get_noise_texture(session.noise_idx_heat,camera_zoomed_size))
+#	var out:=create_texture_from_buffer(buffer,camera_zoomed_size.x, camera_zoomed_size.y)
+	var out:=ImageTexture.create_from_image(get_noise_texture(session.noise_idx_main_elevation,camera_zoomed_size))
 	
 	
 	return out

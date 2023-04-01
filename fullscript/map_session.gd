@@ -40,9 +40,21 @@ func get_noise_offset(resolution_idx:int)->Vector2:
 func get_camera_zoomed_size(resolution_idx:int)->Vector2:
 	return camera_size/resolutions[resolution_idx]
 
+func get_lacunarity_factor()->float:
+	if zoom>5:
+		return 1.1
+	elif zoom>1:
+		return 1.0
+	elif zoom>0.5:
+		return 0.9
+	else:
+		return 0.8
+
 func update_noises(resolution_idx:int):
 	var offset=get_noise_offset(resolution_idx)
 	for i in noise_generators.size():
 		var noise=noise_generators[i]
 		noise.offset=Vector3(offset.x,offset.y,0)
 		noise.frequency=noise_config[i].period*resolutions[resolution_idx]/zoom
+#		if i==noise_idx_elevation or i==noise_idx_main_elevation:
+#			noise.fractal_lacunarity=noise_config[i].lacunarity*2
