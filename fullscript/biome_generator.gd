@@ -54,6 +54,23 @@ const COLOR_TABLE={
 	cSnow:[255,255,255]
 }
 
+const BIOME_NAME_TABLE={
+	cDeepWater:"Deep Water",
+	cShallowWater:"Shallow Water",
+	cSand:"Sand",
+	cDesert:"Desert",
+	cGrass:"Grass",
+	cSavanna:"Savanna",
+	cForest:"Forest",
+	cSeasonalForest:"Seasonal Forest",
+	cBorealForest:"Boreal Forest",
+	cRainForest:"Rain Forest",
+	cRock:"Rock",
+	cTundra:"Tundra",
+	cSnow:"Ice"
+}
+
+
 static func get_biome_buffer1(height_buffer:PackedByteArray,main_height_buffer:PackedByteArray,heat_buffer:PackedByteArray,moisture_buffer:PackedByteArray)->PackedByteArray:
 	var buffer:=PackedByteArray()
 	for i in range(height_buffer.size()):
@@ -144,8 +161,10 @@ static func getWaterBiotop(height:int,moisture:int, heat:int)->int:
 
 
 
-static func get_biome_buffer(height_buffer:PackedByteArray,main_height_buffer:PackedByteArray,heat_buffer:PackedByteArray,moisture_buffer:PackedByteArray)->PackedByteArray:
+static func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,main_height_buffer:PackedByteArray,heat_buffer:PackedByteArray,moisture_buffer:PackedByteArray):
 	var buffer:=PackedByteArray()
+	var middle_pos:=floori(camera_size.y/2.0*camera_size.x+camera_size.x/2.0)
+	var current_biome_name:AreaInfoObject=null
 	for i in range(height_buffer.size()):
 		var main_height := main_height_buffer[i]
 		var height := height_buffer[i]
@@ -153,8 +172,6 @@ static func get_biome_buffer(height_buffer:PackedByteArray,main_height_buffer:Pa
 	#
 		var heat:=heat_buffer[i]
 		var moisture:=moisture_buffer[i]
-		
-		
 		
 		var biome_idx
 		if(height<altSand):
@@ -211,8 +228,10 @@ static func get_biome_buffer(height_buffer:PackedByteArray,main_height_buffer:Pa
 		
 		
 		if COLOR_TABLE.has(biome_idx):
+			if i==middle_pos:
+				current_biome_name=AreaInfoObject.new(biome_idx,heat,moisture,height-altShallowWater,COLOR_TABLE[biome_idx])
 			buffer.append_array(COLOR_TABLE[biome_idx])
 		else:
 			buffer.append_array(COLOR_TABLE[cSnow])
 	
-	return buffer
+	return [buffer,current_biome_name]

@@ -21,7 +21,8 @@ class NoiseObject:
 
 
 var world_offset:Vector2
-var zoom:float=10
+var zoom:= 10.0 : set = set_zoom, get = get_zoom  
+
 var camera_size:Vector2
 var resolutions:Array[int]=[1,2,4,8,16]
 
@@ -33,6 +34,12 @@ const noise_idx_elevation=1
 const noise_idx_heat=2
 const noise_idx_moisture=3
 var current_area_info:AreaInfoObject
+
+func set_zoom(value):
+	zoom = clamp(value, 0.01, 1000)
+
+func get_zoom():
+	return zoom
 
 func get_noise_offset(resolution_idx:int)->Vector2:
 	return (world_offset*zoom-camera_size/2)/resolutions[resolution_idx]
@@ -56,5 +63,3 @@ func update_noises(resolution_idx:int):
 		var noise=noise_generators[i]
 		noise.offset=Vector3(offset.x,offset.y,0)
 		noise.frequency=noise_config[i].period*resolutions[resolution_idx]/zoom
-#		if i==noise_idx_elevation or i==noise_idx_main_elevation:
-#			noise.fractal_lacunarity=noise_config[i].lacunarity*2

@@ -16,6 +16,7 @@ func _ready():
 	map_gen.session=session
 
 	start_update(false)
+	refresh_infobox()
 
 func start_update(is_recursive:bool):
 	if is_recursive:
@@ -61,15 +62,14 @@ func _process(delta):
 	if Input.is_action_pressed("zoom_out"):
 		session.zoom*=0.9
 		map_changed=true
-		print(session.zoom)
 	elif Input.is_action_pressed("zoom_in"):
 		session.zoom*=1.1
 		map_changed=true
-		print(session.zoom)
 	
 	map_changed=map_changed or offset_change != Vector2.ZERO
 	
 	if map_changed:
+		refresh_infobox()
 		image_changed=true
 		$fast_rendering_timer.stop()
 		
@@ -82,3 +82,28 @@ func _process(delta):
 			image_changed=false
 			$fast_rendering_timer.start()
 
+func refresh_infobox():
+	var infobox:ItemList=$HBoxContainer/Panel/infobox
+	
+	
+	infobox.clear()
+	
+	infobox.add_item("Zoom: "+str(roundf(session.zoom*100)/100.0))
+	infobox.add_item("World:")
+
+	infobox.add_item("    X: "+str(roundf(session.world_offset.x)))
+	infobox.add_item("   Y: "+str(roundf(session.world_offset.y)))
+	infobox.add_item("   D: "+str(roundf(session.world_offset.length())))
+	
+	infobox.add_item("Screen:")
+	var screen_offset=session.get_noise_offset(0)
+	infobox.add_item("   X: "+str(roundf(screen_offset.x)))
+	infobox.add_item("   Y: "+str(roundf(screen_offset.y)))
+	infobox.add_item("   D: "+str(roundf(screen_offset.length())))
+	
+	var current_info:=session.current_area_info
+	infobox.add_item("Current place:")
+	infobox.add_item("   Biome: "+BiomeGenerator.BIOME_NAME_TABLE[current_info.biome])
+	infobox.add_item("   Altitude: "+str(current_info.altitude))
+	infobox.add_item("   Moisture: "+str(current_info.moisture))
+	infobox.add_item("   Heat: "+str(current_info.heat))
