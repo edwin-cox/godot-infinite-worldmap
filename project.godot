@@ -18,6 +18,10 @@ config/icon="res://icon.svg"
 
 project/assembly_name="infinite worldmap"
 
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/procedural_world_map/plugin.cfg")
+
 [input]
 
 zoom_in={

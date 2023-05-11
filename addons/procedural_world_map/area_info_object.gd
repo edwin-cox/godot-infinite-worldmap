@@ -1,6 +1,7 @@
+@tool
 extends Node
 
-class_name AreaInfoObject
+class_name ProceduralWorldAreaInfo
 
 var biome:int
 var heat:int
