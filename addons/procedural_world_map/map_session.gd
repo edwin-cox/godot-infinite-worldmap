@@ -1,9 +1,6 @@
 @tool
 extends Node
 
-const AreaInfoObject=preload("area_info_object.gd")
-
-
 var world_offset:Vector2
 var zoom:= 10.0 : set = set_zoom, get = get_zoom  
 
@@ -11,7 +8,7 @@ var camera_size:Vector2
 var resolutions:Array[int]=[1,2,4,8,16]
 var datasource:ProceduralWorldDatasource
 
-var current_area_info:AreaInfoObject: get = get_current_area_info
+var current_area_info:ProceduralWorldAreaInfo: get = get_current_area_info
 
 func get_current_area_info():
 	if datasource:
@@ -21,6 +18,8 @@ func get_current_area_info():
 
 func set_zoom(value):
 	zoom = clamp(value, 0.01, 1000)
+	if datasource:
+		datasource.zoom=zoom
 
 func get_zoom():
 	return zoom

@@ -1,9 +1,10 @@
 @tool
 extends ColorRect
 
+class_name ProceduralWorldMap
+
 var SessionFactory=preload("session_factory.gd")
 const MapSession=preload("map_session.gd")
-const AreaInfoObject=preload("area_info_object.gd")
 
 var session:MapSession
 var current_task_id:int
@@ -22,7 +23,7 @@ var image_changed:bool=true
 @export var detail:=1.0 : set = set_detail, get = get_detail
 @export var refresh_timeout:=0.5 : set = set_refresh_timeout
 
-@export var datasource:ProceduralWorldDatasource
+@export var datasource:ProceduralWorldDatasource : set = set_datasource, get = get_datasource
 
 # ----- SIGNAL ---------------------------------------
 signal update
@@ -37,7 +38,7 @@ var relative_zoom_factor:float :
 	get:
 		return 1/zoom
 
-var current_area_info:AreaInfoObject :
+var current_area_info:ProceduralWorldAreaInfo :
 	get:
 		return session.current_area_info
 
@@ -73,7 +74,12 @@ func set_detail(value:float):
 func get_detail():
 	return 1.0
 
+func set_datasource(ds:ProceduralWorldDatasource):
+	session.datasource=ds
+	refresh()
 
+func get_datasource()->ProceduralWorldDatasource:
+	return session.datasource
 
 # ---- METHODS -------------------------------------------------
 
@@ -81,7 +87,7 @@ func _init():
 	session=SessionFactory.create_session()
 	if not datasource:
 		datasource=SessionFactory.create_Fastnoiselite_datasource(0)
-	session.datasource=datasource
+#	session.datasource=datasource
 	
 	var shader=Shader.new()
 	shader.code="""
@@ -162,7 +168,7 @@ func refresh():
 
 
 func start_delayed_refresh():
-	if not datasource or not incremental_timer:
+	if not datasource or not incremental_timer or not incremental_quality:
 		return
 	
 	if incremental_timer.is_stopped():

@@ -3,6 +3,8 @@ extends ProceduralWorldDatasource
 
 const BConsts=preload("biome_constants.gd")
 
+var custom_color_map=null
+
 var cached_map:PackedByteArray
 var cached_color_map:PackedByteArray
 
@@ -98,11 +100,15 @@ func get_biome_image(camera_zoomed_size:Vector2i):
 	return cached_color_map
 
 
-static func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,main_height_buffer:PackedByteArray,heat_buffer:PackedByteArray,moisture_buffer:PackedByteArray):
+func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,main_height_buffer:PackedByteArray,heat_buffer:PackedByteArray,moisture_buffer:PackedByteArray):
+	var active_color_map=BConsts.COLOR_TABLE
+	if self.custom_color_map!=null:
+		active_color_map=self.custom_color_map
+	
 	var buffer:=PackedByteArray()
 	var color_buffer:=PackedByteArray()
 	var middle_pos:=floori(camera_size.y/2.0*camera_size.x+camera_size.x/2.0)
-	var current_biome_name:AreaInfoObject=null
+	var current_biome_name:ProceduralWorldAreaInfo=null
 	for i in range(height_buffer.size()):
 		var main_height := main_height_buffer[i]
 		var height := height_buffer[i]
@@ -165,11 +171,11 @@ static func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,m
 		
 		if BConsts.COLOR_TABLE.has(biome_idx):
 			if i==middle_pos:
-				current_biome_name=AreaInfoObject.new(biome_idx,heat,moisture,height-BConsts.altShallowWater,BConsts.COLOR_TABLE[biome_idx])
+				current_biome_name=ProceduralWorldAreaInfo.new(biome_idx,heat,moisture,height-BConsts.altShallowWater,BConsts.COLOR_TABLE[biome_idx])
 			buffer.append(biome_idx)
-			color_buffer.append_array(BConsts.COLOR_TABLE[biome_idx])
+			color_buffer.append_array(active_color_map[biome_idx])
 		else:
 			buffer.append(BConsts.cSnow)
-			color_buffer.append_array(BConsts.COLOR_TABLE[BConsts.cSnow])
+			color_buffer.append_array(active_color_map[BConsts.cSnow])
 	
 	return [color_buffer,current_biome_name,buffer]
