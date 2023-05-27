@@ -8,6 +8,8 @@ var custom_color_map=null
 var cached_map:PackedByteArray
 var cached_color_map:PackedByteArray
 
+var area_info_cache=[]
+
 var detail:=1.0 : set = set_detail
 
 class NoiseObject:
@@ -89,9 +91,14 @@ func regenerate_map(camera_zoomed_size:Vector2i):
 	var heat_buffer:=get_noise_image(noise_idx_heat,camera_zoomed_size.x,camera_zoomed_size.y)
 	var moist_buffer:=get_noise_image(noise_idx_moisture,camera_zoomed_size.x,camera_zoomed_size.y)
 
+	while(area_info_cache.size()>0):
+		var ai=area_info_cache.pop_front()
+		ai.queue_free()
+
 	var biome_result=get_biome_buffer(camera_zoomed_size,elev_buffer,main_elev_buffer,heat_buffer,moist_buffer)
 	cached_color_map=biome_result[0]
 	current_area_info=biome_result[1]
+	area_info_cache.append(biome_result[1])
 	cached_map=biome_result[2]
 
 
@@ -108,7 +115,7 @@ func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,main_hei
 	var buffer:=PackedByteArray()
 	var color_buffer:=PackedByteArray()
 	var middle_pos:=floori(camera_size.y/2.0*camera_size.x+camera_size.x/2.0)
-	var current_biome_name:ProceduralWorldAreaInfo=null
+	var current_biome_info:ProceduralWorldAreaInfo=null
 	for i in range(height_buffer.size()):
 		var main_height := main_height_buffer[i]
 		var height := height_buffer[i]
@@ -116,7 +123,7 @@ func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,main_hei
 	#
 		var heat:=heat_buffer[i]
 		var moisture:=moisture_buffer[i]
-		
+
 		var biome_idx
 		if(height<BConsts.altSand):
 			if(height<BConsts.altDeepWater):
@@ -163,19 +170,19 @@ func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,main_hei
 					biome_idx= BConsts.cSavanna;
 				else:
 					biome_idx= BConsts.cRainForest;
-			
+
 		elif(height<BConsts.altRock):
 			biome_idx= BConsts.cRock;
 		else:
 			biome_idx= BConsts.cSnow;
-		
+
 		if BConsts.COLOR_TABLE.has(biome_idx):
 			if i==middle_pos:
-				current_biome_name=ProceduralWorldAreaInfo.new(biome_idx,heat,moisture,height-BConsts.altShallowWater,BConsts.COLOR_TABLE[biome_idx])
+				current_biome_info=ProceduralWorldAreaInfo.new(biome_idx,heat,moisture,height-BConsts.altShallowWater,BConsts.COLOR_TABLE[biome_idx])
 			buffer.append(biome_idx)
 			color_buffer.append_array(active_color_map[biome_idx])
 		else:
 			buffer.append(BConsts.cSnow)
 			color_buffer.append_array(active_color_map[BConsts.cSnow])
 	
-	return [color_buffer,current_biome_name,buffer]
+	return [color_buffer,current_biome_info,buffer]

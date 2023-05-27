@@ -133,7 +133,7 @@ func update_map_texture(res_idx:int,params,is_incremental:bool=false):
 		return
 	
 	var tex:=generate_image(datasource,res_idx)
-
+	
 	var task_id:int=params["task_id"]
 	if thread_cancel.has(task_id):
 		thread_cancel.erase(task_id)
@@ -141,7 +141,7 @@ func update_map_texture(res_idx:int,params,is_incremental:bool=false):
 	else:
 		var mat:ShaderMaterial=self.material
 		mat.set_shader_parameter("DATA",tex)
-
+	
 	if is_incremental and res_idx>0:
 		call_deferred("update_map_recursive",res_idx-1)
 	elif res_idx<=0:
