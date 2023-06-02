@@ -18,12 +18,3 @@ func get_biome_image(size:Vector2i):
 				bytes.append_array([0,0,0])
 
 	return create_texture_from_buffer(bytes, size)
-
-
-func set_offset(value:Vector2):
-	offset=value
-
-
-func set_zoom(value:float):
-	zoom=value
-

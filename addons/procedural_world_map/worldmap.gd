@@ -147,11 +147,7 @@ func get_tint()->Color:
 	return self.color
 # ---- METHODS -------------------------------------------------
 
-func _init():
-	session=SessionFactory.create_session()
-	if not datasource:
-		datasource=SessionFactory.create_Fastnoiselite_datasource(0)
-	
+func get_shader_material()->ShaderMaterial:
 	var shader=Shader.new()
 	shader.code="""
 shader_type canvas_item;
@@ -166,8 +162,15 @@ void fragment() {
 	var material=ShaderMaterial.new()
 	material.shader=shader
 	material.set_shader_parameter("tint",self.color)
+
+	return material
+
+func _init():
+	session=SessionFactory.create_session()
+	if not datasource:
+		datasource=SessionFactory.create_Fastnoiselite_datasource(0)
 	
-	self.material=material
+	self.material=get_shader_material()
 
 func _ready():
 	incremental_timer.wait_time=refresh_timeout

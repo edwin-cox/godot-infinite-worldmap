@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Procedural World Map Generator and Viewer Component is a powerful tool designed for game developers using the Godot 4 game engine. Its main purpose is to provide a fast and efficient way to generate and view procedurally generated world maps for game prototyping. This component offers a world generator and a high-performance viewer, enabling real-time navigation and zooming within the generated maps. It also supports progressive rendering, similar to Blender's internal renderer, allowing for quick low-quality rendering during map browsing and higher-quality rendering during idle periods.
+The Procedural World Map Generator and Viewer Component is a tool designed for game developers using the Godot 4 game engine. Its main purpose is to provide a fast and efficient way to generate and view procedurally generated world maps, either for game prototyping or as a foundation to build advanced procedural world maps. This component offers a basic world generator and a high-performance viewer, enabling real-time navigation and zooming within the generated maps. It also supports progressive rendering, similar to Blender's internal renderer, allowing for quick low-quality rendering during map browsing and higher-quality rendering during idle periods, even on lower end hardware.
 
 ## Features
 
@@ -21,17 +21,19 @@ The Procedural World Map Generator and Viewer Component is a powerful tool desig
 
 ### Installation
 
-1. Download the Procedural World Map Generator and Viewer Component from the project repository.
-2. Extract the component files to your Godot project directory.
+1. Download the Procedural World Map Generator and Viewer Component from the project repository or the Godot Assets Store.
+2. Extract the addons folder to your Godot project directory if you downloaded it manually. The component folder is located at `addons/procedural_world_map`.
 
 ### Usage
 
-1. Open your Godot project and navigate to the desired scene where you want to incorporate the procedural world map generator and viewer component.
-2. Import the component files into your scene.
-3. Add the procedural world map generator and viewer component to the scene by creating a new instance or attaching it to an existing node.
-4. Customize the world generator parameters or use the provided basic world generator using FastNoiseLite.
-5. Run the scene to visualize the generated world map.
-6. Explore the map by using the intuitive navigation controls, including zooming in and out.
+1. Open your Godot project and open the project settings. Navigate to the Plugins tab and enable the `ProceduralWorldMap` plugin.
+1. Navigate to the desired scene where you want to incorporate the procedural world map generator and viewer component.
+2. Add the component by adding a registered node at the path `Node/CanvasItem/Control/ColorRect/ProceduralWorldMap`. You can also add it programmatically by calling `add_child(ProceduralWorldMap.new())`.
+3. Optionally, add a custom datasource to the component in the _ready() function of the scene. In case you don't add a datasource, the component will use the default datasource, which is a basic world generator using FastNoiseLite. You can access the datasource by calling `$ProceduralWorldMap.datasource`.
+4. Customize the world renderer parameters, such as the image resolution, the incremental mode, the default coordinates, and the default zoom level. Note that the image resolution doesn't adapt automatically to the component size, especially for ratios.
+5. Add scripts to bind inputs to the coordinates and zoom level if needed. After changing the coordinates or zoom level, call `refresh()` to update the map quickly, and start the incremental rendering process if enabled.
+6. Explore the map, change the seed, and adjust the coordinates and zoom level to find the desired part of the map for your game. 
+Note: If you use a datasource using the FastNoiseLite generator, keep in mind that the quality of noise deteriorates when rendering very far from the initial 0,0 coordinates. This is a limitation of the FastNoiseLite generator, not the component itself. Thankfully, you have some room to play with the coordinates before the quality starts to deteriorate.
 
 ### Examples
 
@@ -39,16 +41,30 @@ The component repository includes examples demonstrating how to utilize the proc
 
 ## Customization
 
-### Custom World Generator
+### Custom World Datasoure
 
-To create a custom world generator, follow these steps:
+To create a custom world datasource, follow these steps:
 
-1. Inherit the `WorldGenerator` class provided by the component.
-2. Override the `generateMap()` method to implement your custom map generation logic.
-3. Customize the parameters, such as noise functions and seed, to achieve the desired result.
-4. Attach your custom world generator to the procedural world map generator and viewer component instance.
+1. Create a new script and extend the `ProceduralWorldDatasource` class provided by the component. You can also extend the `addons/procedural_world_map/fastnoiselite_datasource.gd` class to use the FastNoiseLite generator as a base for your custom world generator.
+2. Override the `get_biome_image()` method to implement your custom map generation logic. It must return a TextureImage object. You can use the `create_texture_from_buffer()` method to create a texture from an array of bytes representing the raw image data. Refer to the example files (`examples/checkerboard_datasource.gd`) for an example on implementing a custom world datasource.
+3. Eventually, override other methods and getters and setters to customize the datasource to your needs.
+4. Set the datasource by script using the datasource property of the viewer.
 
-Refer to the example files (`examples/custom_world_generator.gd`) for a detailed guide on implementing a custom world generator.
+Refer to the example files (`examples/demo_custom_datasource.gd`) for an example on implementing a custom world generator.
+
+> **_Note_** : The get_biome_image() method has a size parameter that is the size of the texture. As the resolution goes higher, the size goes proportionally higher too. The field `offset` of the datasource represents the top left position of the texture in the world. The `zoom` field is the ratio between one pixel in the texture and one unit in the world.
+
+> **_Note2_** : The performance to make a texture from an array of bytes is far better than using the `set_pixel()` method of the texture. The `set_pixel()` method is very slow and should be avoided. Use the `create_texture_from_buffer()` method instead, by building first a PackedByteArray object. It will create quickly an RGB texture. If you need even more performance, consider using CUDA or a GDExtension. Depending on the kind of implementation, you can also try using C# and threads, though it's not always faster and it adds a lot of complexity.
+
+### Custom Renderer
+
+While the renderer component is meant to be generic enough to be used as it is in most cases, it's possible to override its methods to customize it to your needs. If you only need to change the shader, override the `get_shader_material()` method that implements the shader. 
+
+If you need to change the colors of the map, this is done in the datasource. You can also add a general tint to the map by setting the `tint` property of the renderer. If you simply want to change the colormap of the fastnoiselite datasource, you can set the `custom_color_map` field of the datasource. See the `COLOR_TABLE` constant in the `addons/procedural_world_map/biome_constants.gd` file for an example of a colormap. And override the `get_biome_name()` method to customize the biome names.
+
+For other customizations, you can override any part of the component. It is divided in two rendering phases: the direct rendering and the incremental rendering. The direct rendering is used to render the lowest resolution of the image, while the incremental rendering is used to render the higher resolutions. The incremental rendering is done in a separate thread, and the rendering process is stopped when the user changes the coordinates or the zoom level. The incremental rendering is also stopped when the rendering process is finished, or when the user changes the image resolution. 
+
+Here's the diagram of the general rendering process: 
 
 ```mermaid
 flowchart TD;
@@ -69,24 +85,17 @@ flowchart TD;
     end
 ```
 
-
-### Custom Renderer
-
-To implement a custom renderer for production purposes, follow these steps:
-
-1. Inherit the `WorldRenderer`
-
- class provided by the component.
-2. Override the `renderMap()` method to implement your custom rendering logic.
-3. Customize the rendering process based on your specific requirements, such as texture mapping, lighting, or advanced visual effects.
-4. Attach your custom renderer to the procedural world map generator and viewer component instance.
-
-Refer to the example files (`examples/custom_renderer.gd`) for a detailed guide on implementing a custom renderer.
-
 ## Limitations
 
 - The component is entirely written in GDScript 2 and doesn't require a powerful GPU.
 - The quality of noise generated by the FastNoiseLite generator deteriorates when rendering far from the initial 0,0 coordinates. Keep this in mind when designing large-scale maps.
+- Due to the fact that the datasource usually only reads data inside the viewport, terrain generation based on technics like wave function collapse is usually not possible due to the lack of data outside the viewport. Wave function collapse is made for delimited terrains that are fully loaded in memory. It is hard to use it in an infinite worldmap without getting glitches. Perlin noises and open simplex noises are however perfectly suited for this kind of component.
+- FastNoiseLite has a parameter for the detail of the noise, but changing it doesn't keep consistency between different detail levels. It might show sudden changes in the map. This is a limitation of the FastNoiseLite generator, not the component itself.
+
+## Other possible usages
+
+- By using a rest service, you can outsource the generation of the map to a server. This way, you can generate a map of any size without overloading the client. You could even use OpenStreetMap data to generate a map of the real world.
+- You can also render a non procedural map by implementing a datasource that reads an image file and returns it as a texture. This way, you can use the component to display a map of the real world, or a map of your game world. But you have to manage the resolution of the image depending on the zoom.
 
 ## Support and Contributions
 
