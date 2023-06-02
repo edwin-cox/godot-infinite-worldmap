@@ -50,6 +50,26 @@ To create a custom world generator, follow these steps:
 
 Refer to the example files (`examples/custom_world_generator.gd`) for a detailed guide on implementing a custom world generator.
 
+```mermaid
+flowchart TD;
+    subgraph direct render
+    init((( )))-->_ready--> FR[start fast render];
+    refresh-->reset[stop all ongoing rendering]-->FR
+    FR--"set lowest resolution
+    image_changed=true"-->R[render task]
+    end
+    R-.->_process
+    subgraph incremental rendering
+    _process--image_changed=false-->TO[start timeout]-->IR[start incremental render]
+    IR--increase resolution from lowest-->R2[threaded render task]
+    R2-->RII{is cancelled?}-->RIIY[yes, replace texture] & RIIN[no]-->RHighestRes{is highest resolution?}
+    RHighestRes-->Rcontinue[no] & RStop[yes]
+    Rcontinue-->RCD["call deferred next render"]--increase resolution-->R2
+    RStop--image_changed=false-->RFinished["Rendering finished"]
+    end
+```
+
+
 ### Custom Renderer
 
 To implement a custom renderer for production purposes, follow these steps:

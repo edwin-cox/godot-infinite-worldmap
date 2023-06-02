@@ -1,10 +1,14 @@
 @tool
 extends Node
 
+# This script defines the SessionFactory class, which is used to create new instances of the MapSession and ProceduralWorldDatasource classes.
+# The class provides static methods to create a new MapSession object with default values, and to create a new FastNoiseLiteDatasource object with the given seed value.
+# The create_Fastnoiselite_datasource() method initializes the noise configuration and generators for the FastNoiseLiteDatasource object.
+
 const MapSession=preload("map_session.gd")
 const FastNoiseLiteDatasource=preload("fastnoiselite_datasource.gd")
 
-
+# Creates a new MapSession object with default values.
 static func create_session() -> MapSession:
 	var session:=MapSession.new()
 	
@@ -13,6 +17,8 @@ static func create_session() -> MapSession:
 	
 	return session
 
+# Creates a new FastNoiseLiteDatasource object with the given seed value.
+# Initializes the noise configuration and generators for the FastNoiseLiteDatasource object.
 static func create_Fastnoiselite_datasource(seed:int) -> ProceduralWorldDatasource:
 	var datasource:=FastNoiseLiteDatasource.new()
 	datasource.noise_config=[]

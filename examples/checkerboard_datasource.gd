@@ -1,6 +1,7 @@
 extends ProceduralWorldDatasource
 
-class_name CheckboardDatasource
+# Example of implementation of a custom procedure datasource for a checkerboard world.
+# It makes an infinite procedural checkerboard with black and white squares
 
 const SQUARE_SIZE=256.0
 
@@ -16,7 +17,7 @@ func get_biome_image(size:Vector2i):
 			else:
 				bytes.append_array([0,0,0])
 
-	return bytes
+	return create_texture_from_buffer(bytes, size)
 
 
 func set_offset(value:Vector2):
