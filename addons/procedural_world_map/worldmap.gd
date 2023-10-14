@@ -192,10 +192,10 @@ func _start_map_update(is_recursive:bool):
 		_start_incremental_update_map_task(fast_resolution_index-1)
 	else:
 		image_changed=true
-		_update_map_task(fast_resolution_index,{"task_id":0}) # because it's not rendered through a thread, the task has no id and cannot be cancelled.
+		_update_map_task(self.material,fast_resolution_index,{"task_id":0}) # because it's not rendered through a thread, the task has no id and cannot be cancelled.
 
 # Main task to update the map. Can be called directly for immediate rendering, or through a thread pool for incremental rendering.
-func _update_map_task(res_idx:int,params,is_incremental:bool=false):
+func _update_map_task(mat:ShaderMaterial,res_idx:int,params,is_incremental:bool=false):
 	if not datasource:
 		image_changed=false
 		return
@@ -205,10 +205,10 @@ func _update_map_task(res_idx:int,params,is_incremental:bool=false):
 	# abort rendering if task was cancelled
 	var task_id:int=params["task_id"]
 	if thread_cancel.has(task_id):
+		print("has thread_cancel")
 		thread_cancel.erase(task_id)
 		return
 	else:
-		var mat:ShaderMaterial=self.material
 		mat.set_shader_parameter("DATA",tex)
 	
 	if is_incremental and res_idx>0:
@@ -221,7 +221,7 @@ func _update_map_task(res_idx:int,params,is_incremental:bool=false):
 
 func _start_incremental_update_map_task(res_idx):
 	var params={}
-	current_task_id=WorkerThreadPool.add_task(_update_map_task.bind(res_idx,params,true),false,"map thread")
+	current_task_id=WorkerThreadPool.add_task(_update_map_task.bind(self.material,res_idx,params,true),false,"map thread")
 	# params was given by reference. Since the task has to know its own id but has no method to get it from itself,
 	# the trick is to get the task id returned by the worker thread pool and provide it to the params object, which the task can also access.
 	params["task_id"]=current_task_id
