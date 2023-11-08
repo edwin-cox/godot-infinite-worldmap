@@ -14,7 +14,7 @@ class_name ProceduralWorldMap
 # License: MIT
 
 # ---- IMPORTS -------------------------
-var SessionFactory=preload("session_factory.gd")
+@export var SessionFactory=preload("session_factory.gd")
 const MapSession=preload("map_session.gd")
 
 # ---- VARIABLES -------------------------
@@ -167,9 +167,6 @@ void fragment() {
 
 func _init():
 	session=SessionFactory.create_session()
-	if not datasource:
-		datasource=SessionFactory.create_Fastnoiselite_datasource(0)
-	
 	self.material=get_shader_material()
 
 func _ready():

@@ -12,7 +12,7 @@ config_version=5
 
 config/name="infinite worldmap"
 run/main_scene="res://examples/demo_fullmap.tscn"
-config/features=PackedStringArray("4.0", "Forward Plus")
+config/features=PackedStringArray("4.2", "Forward Plus")
 config/icon="res://icon.png"
 
 [dotnet]
