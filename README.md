@@ -29,7 +29,7 @@ The Procedural World Map Generator and Viewer Component is a tool designed for g
 1. Open your Godot project and open the project settings. Navigate to the Plugins tab and enable the `ProceduralWorldMap` plugin.
 1. Navigate to the desired scene where you want to incorporate the procedural world map generator and viewer component.
 2. Add the component by adding a registered node at the path `Node/CanvasItem/Control/ColorRect/ProceduralWorldMap`. You can also add it programmatically by calling `add_child(ProceduralWorldMap.new())`.
-3. Optionally, add a custom datasource to the component in the _ready() function of the scene. In case you don't add a datasource, the component will use the default datasource, which is a basic world generator using FastNoiseLite. You can access the datasource by calling `$ProceduralWorldMap.datasource`.
+3. Add a custom datasource to the component in the _ready() function of the scene. In case you don't add the datasource, the map will be blank. You can access the datasource by calling `$ProceduralWorldMap.datasource`.
 4. Customize the world renderer parameters, such as the image resolution, the incremental mode, the default coordinates, and the default zoom level. Note that the image resolution doesn't adapt automatically to the component size, especially for ratios.
 5. Add scripts to bind inputs to the coordinates and zoom level if needed. After changing the coordinates or zoom level, call `refresh()` to update the map quickly, and start the incremental rendering process if enabled.
 6. Explore the map, change the seed, and adjust the coordinates and zoom level to find the desired part of the map for your game. 
