@@ -1,0 +1,125 @@
+[gd_scene load_steps=5 format=3 uid="uid://cjyllcpryqwim"]
+
+[ext_resource type="Script" path="res://examples/benchmark.gd" id="1_r1eda"]
+[ext_resource type="Script" path="res://addons/procedural_world_map/worldmap.gd" id="1_xc8mp"]
+
+[sub_resource type="Shader" id="Shader_6j5de"]
+code = "
+shader_type canvas_item;
+uniform sampler2D DATA;
+uniform vec4 tint;
+
+void fragment() {
+	COLOR = texture(DATA, UV) * tint; 
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_l1wb7"]
+shader = SubResource("Shader_6j5de")
+shader_parameter/tint = null
+
+[node name="Benchmark" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_r1eda")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="WorldMap" type="ColorRect" parent="HBoxContainer"]
+unique_name_in_owner = true
+material = SubResource("ShaderMaterial_l1wb7")
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("1_xc8mp")
+camera_size = Vector2i(4096, 4096)
+fast_resolution_index = 0
+
+[node name="Panel" type="Panel" parent="HBoxContainer"]
+custom_minimum_size = Vector2(250, 0)
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="HBoxContainer/Panel"]
+layout_mode = 1
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 5.0
+offset_right = -5.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 2
+metadata/_edit_use_anchors_ = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer/Panel/MarginContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="HBoxContainer/Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Precision"
+
+[node name="PrecisionEdit" type="SpinBox" parent="HBoxContainer/Panel/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 4.0
+value = 2.0
+
+[node name="Label2" type="Label" parent="HBoxContainer/Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Iterations"
+
+[node name="IterationEdit" type="SpinBox" parent="HBoxContainer/Panel/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 1.0
+max_value = 1000.0
+value = 1.0
+
+[node name="Label3" type="Label" parent="HBoxContainer/Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Run"
+
+[node name="RunGDScript" type="Button" parent="HBoxContainer/Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "GDScript"
+
+[node name="RunCSharp" type="Button" parent="HBoxContainer/Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "C#"
+
+[node name="RunAll" type="Button" parent="HBoxContainer/Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "All"
+
+[node name="HSeparator" type="HSeparator" parent="HBoxContainer/Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ResultText" type="RichTextLabel" parent="HBoxContainer/Panel/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+
+[node name="Loading" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 0.517647)
+
+[connection signal="pressed" from="HBoxContainer/Panel/MarginContainer/VBoxContainer/RunGDScript" to="." method="_on_run_gd_script_pressed"]
+[connection signal="pressed" from="HBoxContainer/Panel/MarginContainer/VBoxContainer/RunCSharp" to="." method="_on_run_c_sharp_pressed"]
+[connection signal="pressed" from="HBoxContainer/Panel/MarginContainer/VBoxContainer/RunAll" to="." method="_on_run_all_pressed"]

@@ -102,8 +102,8 @@ namespace ProceduralWorldMap
       return elevation switch
       {
         < BiomeConstants.altSand => CalcOceanBiome(elevation, heat, moist),
-        < BiomeConstants.altRock => CalcLandBiome(heat, moist),
-        < BiomeConstants.altSnow => BiomeConstants.cRock,
+        < BiomeConstants.altForest => CalcLandBiome(heat, moist),
+        < BiomeConstants.altRock => BiomeConstants.cRock,
         _ => BiomeConstants.cSnow
       };
     }
@@ -146,7 +146,7 @@ namespace ProceduralWorldMap
       return moist switch
       {
         < BiomeConstants.DRYER => BiomeConstants.cGrass,
-        < BiomeConstants.WET => BiomeConstants.cForest,
+        < BiomeConstants.DRY => BiomeConstants.cForest,
         _ => BiomeConstants.cBorealForest
       };
     }

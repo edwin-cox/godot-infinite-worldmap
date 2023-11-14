@@ -21,6 +21,7 @@ func _ready():
 	# the component in the editor, which keeps the memory low and prevents
 	# possible side effects with the incremental loop inside the editor.
 	worldmap.incremental_quality=true
+	worldmap.refresh()
 
 
 # Basic controls for browsing the world and zoom in/out
@@ -90,7 +91,7 @@ func _on_seed_edit_value_changed(value):
 	worldmap.refresh()
 "
 
-[sub_resource type="Shader" id="Shader_hemca"]
+[sub_resource type="Shader" id="Shader_ggwd1"]
 code = "
 shader_type canvas_item;
 uniform sampler2D DATA;
@@ -101,8 +102,8 @@ void fragment() {
 }
 "
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_vqu10"]
-shader = SubResource("Shader_hemca")
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_agv5y"]
+shader = SubResource("Shader_ggwd1")
 shader_parameter/tint = null
 
 [node name="DemoFullMap" type="Control"]
@@ -123,10 +124,12 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="worldmap" type="ColorRect" parent="HBoxContainer"]
-material = SubResource("ShaderMaterial_vqu10")
+material = SubResource("ShaderMaterial_agv5y")
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("1_o1her")
+camera_size = Vector2i(2048, 2048)
+refresh_timeout = 0.1
 
 [node name="cursor_vertical" type="ColorRect" parent="HBoxContainer/worldmap"]
 layout_mode = 1

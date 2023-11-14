@@ -94,15 +94,21 @@ func get_biome_image(size:Vector2i):
 	while(area_info_cache.size()>0):
 		var ai=area_info_cache.pop_front()
 		ai.queue_free()
+		
 	var data = datasource.GetBiomeImage(size)
-	fill_area_info_cache()
+	current_area_info=fill_area_info_cache()
+	area_info_cache.append(current_area_info)
 	return data
 
 func fill_area_info_cache():
-	var biome_idx:int=datasource.GetCurrentBiome()
-	var heat:float=datasource.GetCurrentHeat()
-	var moisture:float=datasource.GetCurrentMoisture()
-	var elevation:float=datasource.GetCurrentElevation()
-	var color:Array=BConsts.COLOR_TABLE[biome_idx]
+	var biome_idx=datasource.GetCurrentBiome()
+	var heat=datasource.GetCurrentHeat()
+	var moisture=datasource.GetCurrentMoisture()
+	var elevation=datasource.GetCurrentElevation()
+	var color=BConsts.COLOR_TABLE[BConsts.cSnow]
+	if biome_idx!=null:
+		color=BConsts.COLOR_TABLE[biome_idx]
+	else:
+		biome_idx=BConsts.cSnow
 
 	return ProceduralWorldAreaInfo.new(biome_idx,heat,moisture,elevation,color)
