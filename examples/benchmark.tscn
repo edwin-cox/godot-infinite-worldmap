@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://examples/benchmark.gd" id="1_r1eda"]
 [ext_resource type="Script" path="res://addons/procedural_world_map/worldmap.gd" id="1_xc8mp"]
 
-[sub_resource type="Shader" id="Shader_6j5de"]
+[sub_resource type="Shader" id="Shader_ljose"]
 code = "
 shader_type canvas_item;
 uniform sampler2D DATA;
@@ -14,8 +14,8 @@ void fragment() {
 }
 "
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_l1wb7"]
-shader = SubResource("Shader_6j5de")
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wpqnf"]
+shader = SubResource("Shader_ljose")
 shader_parameter/tint = null
 
 [node name="Benchmark" type="Control"]
@@ -37,7 +37,7 @@ grow_vertical = 2
 
 [node name="WorldMap" type="ColorRect" parent="HBoxContainer"]
 unique_name_in_owner = true
-material = SubResource("ShaderMaterial_l1wb7")
+material = SubResource("ShaderMaterial_wpqnf")
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("1_xc8mp")
@@ -108,7 +108,9 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
+focus_mode = 2
 bbcode_enabled = true
+selection_enabled = true
 
 [node name="Loading" type="ColorRect" parent="."]
 visible = false

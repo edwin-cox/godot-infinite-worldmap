@@ -136,15 +136,15 @@ func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,main_hei
 	for i in range(height_buffer.size()):
 		var main_height := main_height_buffer[i]
 		var height := height_buffer[i]
-		var elevation:int=( min(height*height+height,255) + 2 * main_height*main_height ) / 3
+		var elevation:int=(3*main_height+height)/4
 		var heat:=heat_buffer[i]
 		var moisture:=moisture_buffer[i]
 
 		var biome_idx
-		if(height<BConsts.altSand):
-			if(height<BConsts.altDeepWater):
+		if(elevation<BConsts.altSand):
+			if(elevation<BConsts.altDeepWater):
 				biome_idx= BConsts.cDeepWater;
-			elif(height<BConsts.altShallowWater):
+			elif(elevation<BConsts.altShallowWater):
 				biome_idx= BConsts.cShallowWater;
 			else:
 				if heat<BConsts.COLDER:
@@ -194,7 +194,7 @@ func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,main_hei
 
 		if BConsts.COLOR_TABLE.has(biome_idx):
 			if i==middle_pos:
-				current_biome_info=ProceduralWorldAreaInfo.new(biome_idx,heat,moisture,height-BConsts.altShallowWater,BConsts.COLOR_TABLE[biome_idx])
+				current_biome_info=ProceduralWorldAreaInfo.new(biome_idx,heat,moisture,elevation-BConsts.altShallowWater,BConsts.COLOR_TABLE[biome_idx])
 			buffer.append(biome_idx)
 			color_buffer.append_array(active_color_map[biome_idx])
 		else:

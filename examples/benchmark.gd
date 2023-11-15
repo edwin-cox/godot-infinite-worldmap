@@ -50,6 +50,7 @@ func refresh_results_label():
 	
 	var template="""
 	Image:\t%dx%d
+	Iterated %dx
 	[b]Results[/b]
 	GDScript:\t%.3fs
 	C#:\t\t\t\t%.3fs
@@ -58,7 +59,7 @@ func refresh_results_label():
 	GDScript:\t%.3fs
 	C#:\t\t\t\t%.3fs	
 	"""
-	%ResultText.text=template % [screen_size.x,screen_size.y,time_results[0],time_results[1], duration_results[0], duration_results[1]]
+	%ResultText.text=template % [screen_size.x,screen_size.y, iteration,time_results[0],time_results[1], duration_results[0], duration_results[1]]
 
 
 func _on_run_gd_script_pressed():

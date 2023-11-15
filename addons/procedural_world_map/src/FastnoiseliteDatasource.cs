@@ -35,11 +35,6 @@ namespace ProceduralWorldMap
       return CreateTextureFromBuffer(cachedColorMap, size);
     }
 
-    public void SayHi()
-    {
-      GD.Print("Hayayayaaaaa!");
-    }
-
     public void SetNoise(int noiseIdx, FastNoiseLite noise)
     {
       _noises[noiseIdx] = noise;
@@ -96,15 +91,14 @@ namespace ProceduralWorldMap
 
     private static byte CalculateSingleBiome(byte height, byte mainHeight, byte heat, byte moist)
     {
-      int elevation = height;
-      // int elevation = (int)Math.Sqrt((Math.Min(height * height + height, 255) + 2 * mainHeight * mainHeight) / 3.0);
-      // GD.Print(height, ",", mainHeight, ",", elevation);
-      return elevation switch
+      int elevation = (3 * mainHeight + height) / 4;
+
+      return (elevation, height) switch
       {
-        < BiomeConstants.altSand => CalcOceanBiome(elevation, heat, moist),
-        < BiomeConstants.altForest => CalcLandBiome(heat, moist),
-        < BiomeConstants.altRock => BiomeConstants.cRock,
-        _ => BiomeConstants.cSnow
+        ( < BiomeConstants.altSand, _) => CalcOceanBiome(elevation, heat, moist),
+        (_, < BiomeConstants.altForest) => CalcLandBiome(heat, moist),
+        (_, < BiomeConstants.altRock) => BiomeConstants.cRock,
+        _ => BiomeConstants.cSnow,
       };
     }
 
