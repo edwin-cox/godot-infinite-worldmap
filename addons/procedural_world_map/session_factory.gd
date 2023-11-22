@@ -71,11 +71,11 @@ static func create_Fastnoiselite_datasource(seed:int) -> ProceduralWorldDatasour
 	datasource.seed=seed
 	
 	var simplex:=FastNoiseLite.TYPE_SIMPLEX
-	datasource.noise_config[datasource.noise_idx_elevation]=create_simplex_noise_config(seed,0,6,0.0011,0.5,4.0)
-	datasource.noise_config[datasource.noise_idx_main_elevation]=create_simplex_noise_config(seed,0,9,0.0001,1,1)
+	datasource.noise_config[datasource.noise_idx_terrain_elevation]=create_simplex_noise_config(seed,0,6,0.0011,0.5,4.0)
+	datasource.noise_config[datasource.noise_idx_continent_elevation]=create_simplex_noise_config(seed,0,9,0.0001,1,1)
 	datasource.noise_config[datasource.noise_idx_moisture]=create_simplex_noise_config(seed,1,4,0.05,3,0.4)
 	datasource.noise_config[datasource.noise_idx_heat]=create_simplex_noise_config(seed,2,4,0.05,3,0.4)
-	datasource.noise_config[datasource.noise_idx_continent]=create_continent_noise(seed,0)
+	datasource.noise_config[datasource.noise_idx_landmass_elevation]=create_continent_noise(seed,0)
 	
 	datasource.noise_generators=[]
 	datasource.noise_generators.resize(datasource.noise_config.size())
