@@ -12,11 +12,11 @@ var noise_generators:Array[FastNoiseLite]
 var detail:=1.0 : set = set_detail
 
 # Define constants to store the indices of the noise generators.
-const noise_idx_main_elevation=0
-const noise_idx_elevation=1
+const noise_idx_continent_elevation=0
+const noise_idx_terrain_elevation=1
 const noise_idx_heat=2
 const noise_idx_moisture=3
-const noise_idx_continent=4
+const noise_idx_landmass_elevation=4
 
 # Define a class to store the noise configuration.
 class NoiseObject:
@@ -81,7 +81,7 @@ func set_zoom(value:float):
 # Define a method to set the detail level and update the noise generator for elevation.
 func set_detail(value:float):
 	detail=value
-	noise_generators[noise_idx_elevation].fractal_lacunarity=noise_config[noise_idx_elevation].fractal_lacunarity*value
+	noise_generators[noise_idx_terrain_elevation].fractal_lacunarity=noise_config[noise_idx_terrain_elevation].fractal_lacunarity*value
 
 # Define a method to set the seed and update the noise generators.
 func set_seed(value:int):
@@ -94,7 +94,8 @@ func set_seed(value:int):
 func get_biome_image(size:Vector2i):
 	while(area_info_cache.size()>0):
 		var ai=area_info_cache.pop_front()
-		ai.queue_free()
+		if is_instance_valid(ai):
+			ai.queue_free()
 		
 	var data = datasource.GetBiomeImage(size)
 	current_area_info=fill_area_info_cache()

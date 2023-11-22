@@ -91,7 +91,7 @@ func _on_seed_edit_value_changed(value):
 	worldmap.refresh()
 "
 
-[sub_resource type="Shader" id="Shader_45gd4"]
+[sub_resource type="Shader" id="Shader_qgq4s"]
 code = "
 shader_type canvas_item;
 uniform sampler2D DATA;
@@ -102,8 +102,8 @@ void fragment() {
 }
 "
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_l4su5"]
-shader = SubResource("Shader_45gd4")
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_elsxn"]
+shader = SubResource("Shader_qgq4s")
 shader_parameter/tint = null
 
 [node name="DemoFullMap" type="Control"]
@@ -124,7 +124,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="worldmap" type="ColorRect" parent="HBoxContainer"]
-material = SubResource("ShaderMaterial_l4su5")
+material = SubResource("ShaderMaterial_elsxn")
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("1_o1her")

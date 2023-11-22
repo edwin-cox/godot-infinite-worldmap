@@ -10,11 +10,11 @@ namespace ProceduralWorldMap
   {
     private sealed record V2I(int X, int Y);
 
-    const int _noiseIdxMainElevation = 0;
-    const int _noiseIdxElevation = 1;
+    const int _noiseIdxContinentElevation = 0;
+    const int _noiseIdxTerrainElevation = 1;
     const int _noiseIdxHeat = 2;
     const int _noiseIdxMoisture = 3;
-    const int _noiseIdxContinent = 4;
+    const int _noiseIdxLandmassElevation = 4;
 
     private FastNoiseLite[] _noises = new FastNoiseLite[5];
 
@@ -27,7 +27,7 @@ namespace ProceduralWorldMap
     public byte GetCurrentBiome() => cachedMap[_lastMiddleIndex];
     public byte GetCurrentHeat() => _lastMiddleBufferValues[_noiseIdxHeat];
     public byte GetCurrentMoisture() => _lastMiddleBufferValues[_noiseIdxMoisture];
-    public byte GetCurrentElevation() => (byte)(_lastMiddleBufferValues[_noiseIdxElevation] - BiomeConstants.altShallowWater);
+    public byte GetCurrentElevation() => (byte)(CalcElevation(_lastMiddleBufferValues[_noiseIdxTerrainElevation], _lastMiddleBufferValues[_noiseIdxContinentElevation], _lastMiddleBufferValues[_noiseIdxLandmassElevation]));
 
     public ImageTexture GetBiomeImage(Vector2I cameraZoomedSize)
     {
@@ -54,19 +54,19 @@ namespace ProceduralWorldMap
       var tasks = Enumerable.Range(0, 5).Select(idx => Task.Run(() => GetNoiseImage(idx, cameraZoomedSize.X, cameraZoomedSize.Y)));
       var buffers = await Task.WhenAll(tasks);
 
-      byte[] mainElevBuffer = buffers[_noiseIdxMainElevation];
-      byte[] elevBuffer = buffers[_noiseIdxElevation];
+      byte[] continentElevationBuffer = buffers[_noiseIdxContinentElevation];
+      byte[] terrainElevationBuffer = buffers[_noiseIdxTerrainElevation];
       byte[] heatBuffer = buffers[_noiseIdxHeat];
       byte[] moistureBuffer = buffers[_noiseIdxMoisture];
-      byte[] continentBuffer = buffers[_noiseIdxContinent];
+      byte[] landmassElevationBuffer = buffers[_noiseIdxLandmassElevation];
 
       _lastMiddleIndex = GetBufferMiddleIndex(cameraZoomedSize);
-      _lastMiddleBufferValues = new byte[] { elevBuffer[_lastMiddleIndex], mainElevBuffer[_lastMiddleIndex], heatBuffer[_lastMiddleIndex], moistureBuffer[_lastMiddleIndex], continentBuffer[_lastMiddleIndex] };
+      _lastMiddleBufferValues = new byte[] { terrainElevationBuffer[_lastMiddleIndex], continentElevationBuffer[_lastMiddleIndex], heatBuffer[_lastMiddleIndex], moistureBuffer[_lastMiddleIndex], landmassElevationBuffer[_lastMiddleIndex] };
 
-      GetBiomeBuffer(cameraZoomedSize, elevBuffer, mainElevBuffer, heatBuffer, moistureBuffer, continentBuffer);
+      GetBiomeBuffer(cameraZoomedSize, terrainElevationBuffer, continentElevationBuffer, heatBuffer, moistureBuffer, landmassElevationBuffer);
     }
 
-    private void GetBiomeBuffer(V2I cameraZoomedSize, byte[] elevBuffer, byte[] mainElevBuffer, byte[] heatBuffer, byte[] moistureBuffer, byte[] continentBuffer)
+    private void GetBiomeBuffer(V2I cameraZoomedSize, byte[] terrainElevationBuffer, byte[] continentElevationBuffer, byte[] heatBuffer, byte[] moistureBuffer, byte[] landmassBuffer)
     {
       byte[] buffer = new byte[cameraZoomedSize.X * cameraZoomedSize.Y];
       byte[] colorBuffer = new byte[cameraZoomedSize.X * cameraZoomedSize.Y * 3];
@@ -82,7 +82,7 @@ namespace ProceduralWorldMap
         colorBuffer[i * 3 + 2] = biomeColor[2];
       }
 
-      Parallel.For(0, elevBuffer.Length, i => fillBuffers(i, CalculateSingleBiome(elevBuffer[i], mainElevBuffer[i], continentBuffer[i], heatBuffer[i], moistureBuffer[i])));
+      Parallel.For(0, terrainElevationBuffer.Length, i => fillBuffers(i, CalculateSingleBiome(terrainElevationBuffer[i], continentElevationBuffer[i], landmassBuffer[i], heatBuffer[i], moistureBuffer[i])));
 
       cachedMap = buffer;
       cachedColorMap = colorBuffer;
@@ -91,13 +91,9 @@ namespace ProceduralWorldMap
 
     private static int GetBufferMiddleIndex(V2I cameraZoomedSize) => (int)(cameraZoomedSize.Y / 2.0 * cameraZoomedSize.X + cameraZoomedSize.X / 2.0);
 
-    private static byte CalculateSingleBiome(byte height, byte mainHeight, byte continentHeight, byte heat, byte moist)
+    private static byte CalculateSingleBiome(byte terrainHeight, byte continentHeight, byte landmassHeight, byte heat, byte moist)
     {
-      int elevation = (int)((6 * 0.85 * mainHeight + 3 * 1.8 * continentHeight + height) / 10);
-      if (elevation >= BiomeConstants.altShallowWater)
-      {
-        elevation = (3 * mainHeight + height * height / 140) / 4 - 5;
-      }
+      int elevation = CalcElevation(terrainHeight, continentHeight, landmassHeight);
 
       return (elevation) switch
       {
@@ -106,6 +102,17 @@ namespace ProceduralWorldMap
         < BiomeConstants.altRock => BiomeConstants.cRock,
         _ => BiomeConstants.cSnow,
       };
+    }
+
+    private static int CalcElevation(byte terrainHeight, byte continentHeight, byte landmassHeight)
+    {
+      int elevation = (int)((6 * 0.85 * continentHeight + 3 * 1.8 * landmassHeight + terrainHeight) / 10);
+      if (elevation >= BiomeConstants.altShallowWater)
+      {
+        elevation = (3 * continentHeight + terrainHeight * terrainHeight / 140) / 4 - 5;
+      }
+
+      return elevation;
     }
 
     private static byte CalcLandBiome(byte heat, byte moist)
