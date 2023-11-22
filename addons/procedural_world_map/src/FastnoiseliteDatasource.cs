@@ -14,8 +14,9 @@ namespace ProceduralWorldMap
     const int _noiseIdxElevation = 1;
     const int _noiseIdxHeat = 2;
     const int _noiseIdxMoisture = 3;
+    const int _noiseIdxContinent = 4;
 
-    private FastNoiseLite[] _noises = new FastNoiseLite[4];
+    private FastNoiseLite[] _noises = new FastNoiseLite[5];
 
     private byte[] cachedMap;
     private byte[] cachedColorMap;
@@ -50,21 +51,22 @@ namespace ProceduralWorldMap
 
     private async Task RegenerateMapAsync(V2I cameraZoomedSize)
     {
-      var tasks = Enumerable.Range(0, 4).Select(idx => Task.Run(() => GetNoiseImage(idx, cameraZoomedSize.X, cameraZoomedSize.Y)));
+      var tasks = Enumerable.Range(0, 5).Select(idx => Task.Run(() => GetNoiseImage(idx, cameraZoomedSize.X, cameraZoomedSize.Y)));
       var buffers = await Task.WhenAll(tasks);
 
       byte[] mainElevBuffer = buffers[_noiseIdxMainElevation];
       byte[] elevBuffer = buffers[_noiseIdxElevation];
       byte[] heatBuffer = buffers[_noiseIdxHeat];
       byte[] moistureBuffer = buffers[_noiseIdxMoisture];
+      byte[] continentBuffer = buffers[_noiseIdxContinent];
 
       _lastMiddleIndex = GetBufferMiddleIndex(cameraZoomedSize);
-      _lastMiddleBufferValues = new byte[] { elevBuffer[_lastMiddleIndex], mainElevBuffer[_lastMiddleIndex], heatBuffer[_lastMiddleIndex], moistureBuffer[_lastMiddleIndex] };
+      _lastMiddleBufferValues = new byte[] { elevBuffer[_lastMiddleIndex], mainElevBuffer[_lastMiddleIndex], heatBuffer[_lastMiddleIndex], moistureBuffer[_lastMiddleIndex], continentBuffer[_lastMiddleIndex] };
 
-      GetBiomeBuffer(cameraZoomedSize, elevBuffer, mainElevBuffer, heatBuffer, moistureBuffer);
+      GetBiomeBuffer(cameraZoomedSize, elevBuffer, mainElevBuffer, heatBuffer, moistureBuffer, continentBuffer);
     }
 
-    private void GetBiomeBuffer(V2I cameraZoomedSize, byte[] elevBuffer, byte[] mainElevBuffer, byte[] heatBuffer, byte[] moistureBuffer)
+    private void GetBiomeBuffer(V2I cameraZoomedSize, byte[] elevBuffer, byte[] mainElevBuffer, byte[] heatBuffer, byte[] moistureBuffer, byte[] continentBuffer)
     {
       byte[] buffer = new byte[cameraZoomedSize.X * cameraZoomedSize.Y];
       byte[] colorBuffer = new byte[cameraZoomedSize.X * cameraZoomedSize.Y * 3];
@@ -80,7 +82,7 @@ namespace ProceduralWorldMap
         colorBuffer[i * 3 + 2] = biomeColor[2];
       }
 
-      Parallel.For(0, elevBuffer.Length, i => fillBuffers(i, CalculateSingleBiome(elevBuffer[i], mainElevBuffer[i], heatBuffer[i], moistureBuffer[i])));
+      Parallel.For(0, elevBuffer.Length, i => fillBuffers(i, CalculateSingleBiome(elevBuffer[i], mainElevBuffer[i], continentBuffer[i], heatBuffer[i], moistureBuffer[i])));
 
       cachedMap = buffer;
       cachedColorMap = colorBuffer;
@@ -89,15 +91,19 @@ namespace ProceduralWorldMap
 
     private static int GetBufferMiddleIndex(V2I cameraZoomedSize) => (int)(cameraZoomedSize.Y / 2.0 * cameraZoomedSize.X + cameraZoomedSize.X / 2.0);
 
-    private static byte CalculateSingleBiome(byte height, byte mainHeight, byte heat, byte moist)
+    private static byte CalculateSingleBiome(byte height, byte mainHeight, byte continentHeight, byte heat, byte moist)
     {
-      int elevation = (3 * mainHeight + height) / 4;
-
-      return (elevation, height) switch
+      int elevation = (int)((6 * 0.85 * mainHeight + 3 * 1.8 * continentHeight + height) / 10);
+      if (elevation >= BiomeConstants.altShallowWater)
       {
-        ( < BiomeConstants.altSand, _) => CalcOceanBiome(elevation, heat, moist),
-        (_, < BiomeConstants.altForest) => CalcLandBiome(heat, moist),
-        (_, < BiomeConstants.altRock) => BiomeConstants.cRock,
+        elevation = (3 * mainHeight + height * height / 140) / 4 - 5;
+      }
+
+      return (elevation) switch
+      {
+        < BiomeConstants.altSand => CalcOceanBiome(elevation, heat, moist),
+        < BiomeConstants.altForest => CalcLandBiome(heat, moist),
+        < BiomeConstants.altRock => BiomeConstants.cRock,
         _ => BiomeConstants.cSnow,
       };
     }

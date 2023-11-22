@@ -17,27 +17,8 @@ var area_info_cache=[]
 
 var detail:=1.0 : set = set_detail
 
-# Define a class to store the noise configuration.
-class NoiseObject:
-	var seed_nr:int
-	var seed_offset:int
-	var octaves:int
-	var period:float
-	var initial_period:float
-	var persistence:float
-	var lacunarity:float
-	
-	func _init(seed_nr:int,seed_offset:int,octaves:int,period:float,persistence:float,lacunarity:float):
-		self.seed_nr=seed_nr
-		self.seed_offset=seed_offset
-		self.octaves=octaves
-		self.period=period
-		self.initial_period=period
-		self.persistence=persistence
-		self.lacunarity=lacunarity
-
 # Define variables to store the noise configuration and generators.
-var noise_config:Array[NoiseObject]
+var noise_config:Array[Dictionary]
 var noise_generators:Array[FastNoiseLite]
 
 # Define constants to store the indices of the noise generators.
@@ -45,22 +26,7 @@ const noise_idx_main_elevation=0
 const noise_idx_elevation=1
 const noise_idx_heat=2
 const noise_idx_moisture=3
-
-### CONSTRUCTORS #################
-
-# Define a static method to create a new noise generator based on the given configuration.
-static func create_noise_generator(config:NoiseObject)->FastNoiseLite:
-	var noise:=FastNoiseLite.new()
-	
-	noise.noise_type=FastNoiseLite.TYPE_SIMPLEX
-	noise.seed=config.seed_nr+config.seed_offset
-	noise.fractal_octaves=config.octaves
-	noise.frequency=config.period
-	noise.fractal_gain=config.persistence
-	noise.fractal_lacunarity=config.lacunarity
-
-	return noise
-
+const noise_idx_continent=4
 
 ### GETTERS SETTERS #######
 
@@ -80,12 +46,12 @@ func set_zoom(value:float):
 	zoom=value
 	for i in noise_generators.size():
 		var noise=noise_generators[i]
-		noise.frequency=noise_config[i].period/zoom
+		noise.frequency=noise_config[i].frequency/zoom
 
 # Define a method to set the detail level and update the noise generator for elevation.
 func set_detail(value:float):
 	detail=value
-	noise_generators[noise_idx_elevation].fractal_lacunarity=noise_config[noise_idx_elevation].lacunarity*value
+	noise_generators[noise_idx_elevation].fractal_lacunarity=noise_config[noise_idx_elevation].fractal_lacunarity*value
 
 # Define a method to set the seed and update the noise generators.
 func set_seed(value:int):
@@ -105,6 +71,7 @@ func regenerate_map(camera_zoomed_size:Vector2i):
 	var main_elev_buffer:=get_noise_image(noise_idx_main_elevation,camera_zoomed_size.x,camera_zoomed_size.y)
 	var heat_buffer:=get_noise_image(noise_idx_heat,camera_zoomed_size.x,camera_zoomed_size.y)
 	var moist_buffer:=get_noise_image(noise_idx_moisture,camera_zoomed_size.x,camera_zoomed_size.y)
+	var continent_buffer:=get_noise_image(noise_idx_continent,camera_zoomed_size.x,camera_zoomed_size.y)
 
 	# Clear the area info cache.
 	while(area_info_cache.size()>0):
@@ -112,7 +79,7 @@ func regenerate_map(camera_zoomed_size:Vector2i):
 		ai.queue_free()
 
 	# Get the biome buffer and store the color map, area info, and map data in the appropriate variables.
-	var biome_result=get_biome_buffer(camera_zoomed_size,elev_buffer,main_elev_buffer,heat_buffer,moist_buffer)
+	var biome_result=get_biome_buffer(camera_zoomed_size,elev_buffer,main_elev_buffer,heat_buffer,moist_buffer,continent_buffer)
 	cached_color_map=biome_result[0]
 	current_area_info=biome_result[1]
 	area_info_cache.append(biome_result[1])
@@ -124,7 +91,7 @@ func get_biome_image(camera_zoomed_size:Vector2i):
 	return create_texture_from_buffer(cached_color_map, camera_zoomed_size)
 
 # Define a method to get the biome buffer based on the current noise configuration and generators.
-func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,main_height_buffer:PackedByteArray,heat_buffer:PackedByteArray,moisture_buffer:PackedByteArray):
+func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,main_height_buffer:PackedByteArray,heat_buffer:PackedByteArray,moisture_buffer:PackedByteArray,continent_buffer:PackedByteArray):
 	var active_color_map=BConsts.COLOR_TABLE
 	if self.custom_color_map!=null:
 		active_color_map=self.custom_color_map
@@ -136,9 +103,14 @@ func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,main_hei
 	for i in range(height_buffer.size()):
 		var main_height := main_height_buffer[i]
 		var height := height_buffer[i]
-		var elevation:int=(3*main_height+height)/4
+		var continent_height := continent_buffer[i]
 		var heat:=heat_buffer[i]
 		var moisture:=moisture_buffer[i]
+			
+		var elevation:int=(6*main_height*0.85 + 3*continent_height*1.8+1*height)/10
+
+		if elevation>=BConsts.altShallowWater:
+			elevation=(3*main_height+height*height/140)/4 - 5
 
 		var biome_idx
 		if(elevation<BConsts.altSand):
@@ -158,7 +130,7 @@ func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,main_hei
 						biome_idx= BConsts.cSavanna;
 					else:
 						biome_idx= BConsts.cGrass
-		elif(height<BConsts.altForest):
+		elif(elevation<BConsts.altForest):
 			if (heat<BConsts.COLDEST):
 				biome_idx= BConsts.cSnow;
 			elif(heat<BConsts.COLDER):
@@ -187,11 +159,11 @@ func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,main_hei
 				else:
 					biome_idx= BConsts.cRainForest;
 
-		elif(height<BConsts.altRock):
+		elif(elevation<BConsts.altRock):
 			biome_idx= BConsts.cRock;
 		else:
 			biome_idx= BConsts.cSnow;
-
+		
 		if BConsts.COLOR_TABLE.has(biome_idx):
 			if i==middle_pos:
 				current_biome_info=ProceduralWorldAreaInfo.new(biome_idx,heat,moisture,elevation-BConsts.altShallowWater,BConsts.COLOR_TABLE[biome_idx])
