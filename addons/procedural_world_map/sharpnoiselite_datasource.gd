@@ -1,6 +1,6 @@
 extends ProceduralWorldDatasource
 
-const NoiseClass=preload("res://addons/procedural_world_map/src/FastnoiseliteDatasource.cs")
+const NoiseClass=preload("res://addons/procedural_world_map/mono/FastnoiseliteDatasource.cs")
 const BConsts=preload("biome_constants.gd")
 
 var datasource
