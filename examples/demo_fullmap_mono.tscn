@@ -128,7 +128,7 @@ material = SubResource("ShaderMaterial_lvd31")
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("1_o1her")
-refresh_timeout = 0.1
+refresh_timeout = 0.2
 
 [node name="cursor_vertical" type="ColorRect" parent="HBoxContainer/worldmap"]
 layout_mode = 1

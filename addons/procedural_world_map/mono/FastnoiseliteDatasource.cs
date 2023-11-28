@@ -35,7 +35,7 @@ namespace ProceduralWorldMap
     public ImageTexture GetBiomeImage(Vector2I cameraZoomedSize)
     {
       V2I size = new(cameraZoomedSize.X, cameraZoomedSize.Y);
-      RegenerateMapAsync(size);
+      RegenerateMap(size);
       return CreateTextureFromBuffer(cachedColorMap, size);
     }
 
@@ -60,7 +60,7 @@ namespace ProceduralWorldMap
                .ToDictionary(idx => idx, idx => GetNoiseImage((int)idx, cameraZoomedSize.X, cameraZoomedSize.Y));
     }
 
-    private void RegenerateMapAsync(V2I cameraZoomedSize)
+    private void RegenerateMap(V2I cameraZoomedSize)
     {
       Dictionary<NoiseIndex, byte[]> buffers = GenerateNoiseBuffers(cameraZoomedSize);
 
