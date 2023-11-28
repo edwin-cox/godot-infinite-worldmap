@@ -61,7 +61,7 @@ namespace ProceduralWorldMap
       byte[] landmassElevationBuffer = buffers[_noiseIdxLandmassElevation];
 
       _lastMiddleIndex = GetBufferMiddleIndex(cameraZoomedSize);
-      _lastMiddleBufferValues = new byte[] { terrainElevationBuffer[_lastMiddleIndex], continentElevationBuffer[_lastMiddleIndex], heatBuffer[_lastMiddleIndex], moistureBuffer[_lastMiddleIndex], landmassElevationBuffer[_lastMiddleIndex] };
+      _lastMiddleBufferValues = new byte[] { continentElevationBuffer[_lastMiddleIndex], terrainElevationBuffer[_lastMiddleIndex], heatBuffer[_lastMiddleIndex], moistureBuffer[_lastMiddleIndex], landmassElevationBuffer[_lastMiddleIndex] };
 
       GetBiomeBuffer(cameraZoomedSize, terrainElevationBuffer, continentElevationBuffer, heatBuffer, moistureBuffer, landmassElevationBuffer);
     }

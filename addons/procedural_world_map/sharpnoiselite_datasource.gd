@@ -18,41 +18,9 @@ const noise_idx_heat=2
 const noise_idx_moisture=3
 const noise_idx_landmass_elevation=4
 
-# Define a class to store the noise configuration.
-class NoiseObject:
-	var seed_nr:int
-	var seed_offset:int
-	var octaves:int
-	var period:float
-	var initial_period:float
-	var persistence:float
-	var lacunarity:float
-	
-	func _init(seed_nr:int,seed_offset:int,octaves:int,period:float,persistence:float,lacunarity:float):
-		self.seed_nr=seed_nr
-		self.seed_offset=seed_offset
-		self.octaves=octaves
-		self.period=period
-		self.initial_period=period
-		self.persistence=persistence
-		self.lacunarity=lacunarity
-
 ### CONSTRUCTORS #################
 func _init():
 	datasource=NoiseClass.new()
-
-# Define a static method to create a new noise generator based on the given configuration.
-static func create_noise_generator(config:NoiseObject)->FastNoiseLite:
-	var noise:=FastNoiseLite.new()
-	
-	noise.noise_type=FastNoiseLite.TYPE_SIMPLEX
-	noise.seed=config.seed_nr+config.seed_offset
-	noise.fractal_octaves=config.octaves
-	noise.frequency=config.period
-	noise.fractal_gain=config.persistence
-	noise.fractal_lacunarity=config.lacunarity
-
-	return noise
 
 func init_noises():
 	for i in range(5):
@@ -106,11 +74,11 @@ func fill_area_info_cache():
 	var biome_idx=datasource.GetCurrentBiome()
 	var heat=datasource.GetCurrentHeat()
 	var moisture=datasource.GetCurrentMoisture()
-	var elevation=datasource.GetCurrentElevation()
+	var elevation=datasource.GetCurrentElevation() 
 	var color=BConsts.COLOR_TABLE[BConsts.cSnow]
 	if biome_idx!=null:
 		color=BConsts.COLOR_TABLE[biome_idx]
 	else:
 		biome_idx=BConsts.cSnow
 
-	return ProceduralWorldAreaInfo.new(biome_idx,heat,moisture,elevation,color)
+	return ProceduralWorldAreaInfo.new(biome_idx,heat,moisture,elevation- BConsts.altShallowWater,color)
