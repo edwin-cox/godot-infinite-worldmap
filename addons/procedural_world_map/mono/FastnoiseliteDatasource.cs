@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace ProceduralWorldMap
 {
@@ -10,29 +11,31 @@ namespace ProceduralWorldMap
   {
     private sealed record V2I(int X, int Y);
 
-    const int _noiseIdxContinentElevation = 0;
-    const int _noiseIdxTerrainElevation = 1;
-    const int _noiseIdxHeat = 2;
-    const int _noiseIdxMoisture = 3;
-    const int _noiseIdxLandmassElevation = 4;
-
+    public enum NoiseIndex
+    {
+      ContinentElevation,
+      TerrainElevation,
+      Heat,
+      Moisture,
+      LandmassElevation
+    }
     private FastNoiseLite[] _noises = new FastNoiseLite[5];
 
     private byte[] cachedMap;
     private byte[] cachedColorMap;
     private int _lastMiddleIndex = -1;
-    private byte[] _lastMiddleBufferValues;
+    private Dictionary<NoiseIndex, byte> _lastMiddleBufferValues;
 
     public static string GetBiomeName(int biome) => BiomeConstants.BIOME_NAME_TABLE[biome];
     public byte GetCurrentBiome() => cachedMap[_lastMiddleIndex];
-    public byte GetCurrentHeat() => _lastMiddleBufferValues[_noiseIdxHeat];
-    public byte GetCurrentMoisture() => _lastMiddleBufferValues[_noiseIdxMoisture];
-    public byte GetCurrentElevation() => (byte)(CalcElevation(_lastMiddleBufferValues[_noiseIdxTerrainElevation], _lastMiddleBufferValues[_noiseIdxContinentElevation], _lastMiddleBufferValues[_noiseIdxLandmassElevation]));
+    public byte GetCurrentHeat() => _lastMiddleBufferValues[NoiseIndex.Heat];
+    public byte GetCurrentMoisture() => _lastMiddleBufferValues[NoiseIndex.Moisture];
+    public byte GetCurrentElevation() => (byte)CalcElevation(_lastMiddleBufferValues[NoiseIndex.TerrainElevation], _lastMiddleBufferValues[NoiseIndex.ContinentElevation], _lastMiddleBufferValues[NoiseIndex.LandmassElevation]);
 
     public ImageTexture GetBiomeImage(Vector2I cameraZoomedSize)
     {
       V2I size = new(cameraZoomedSize.X, cameraZoomedSize.Y);
-      Task.Run(() => RegenerateMapAsync(size)).Wait();
+      RegenerateMapAsync(size);
       return CreateTextureFromBuffer(cachedColorMap, size);
     }
 
@@ -49,50 +52,59 @@ namespace ProceduralWorldMap
 
     private byte[] GetNoiseImage(int noiseIdx, int w, int h) => _noises[noiseIdx].GetImage(w, h, false, false, false).GetData();
 
-    private async Task RegenerateMapAsync(V2I cameraZoomedSize)
+    private Dictionary<NoiseIndex, byte[]> GenerateNoiseBuffers(V2I cameraZoomedSize)
     {
-      var tasks = Enumerable.Range(0, 5).Select(idx => Task.Run(() => GetNoiseImage(idx, cameraZoomedSize.X, cameraZoomedSize.Y)));
-      var buffers = await Task.WhenAll(tasks);
-
-      byte[] continentElevationBuffer = buffers[_noiseIdxContinentElevation];
-      byte[] terrainElevationBuffer = buffers[_noiseIdxTerrainElevation];
-      byte[] heatBuffer = buffers[_noiseIdxHeat];
-      byte[] moistureBuffer = buffers[_noiseIdxMoisture];
-      byte[] landmassElevationBuffer = buffers[_noiseIdxLandmassElevation];
-
-      _lastMiddleIndex = GetBufferMiddleIndex(cameraZoomedSize);
-      _lastMiddleBufferValues = new byte[] { continentElevationBuffer[_lastMiddleIndex], terrainElevationBuffer[_lastMiddleIndex], heatBuffer[_lastMiddleIndex], moistureBuffer[_lastMiddleIndex], landmassElevationBuffer[_lastMiddleIndex] };
-
-      GetBiomeBuffer(cameraZoomedSize, terrainElevationBuffer, continentElevationBuffer, heatBuffer, moistureBuffer, landmassElevationBuffer);
+      return Enum.GetValues(typeof(NoiseIndex))
+               .Cast<NoiseIndex>()
+               .AsParallel()
+               .ToDictionary(idx => idx, idx => GetNoiseImage((int)idx, cameraZoomedSize.X, cameraZoomedSize.Y));
     }
 
-    private void GetBiomeBuffer(V2I cameraZoomedSize, byte[] terrainElevationBuffer, byte[] continentElevationBuffer, byte[] heatBuffer, byte[] moistureBuffer, byte[] landmassBuffer)
+    private void RegenerateMapAsync(V2I cameraZoomedSize)
     {
-      byte[] buffer = new byte[cameraZoomedSize.X * cameraZoomedSize.Y];
+      Dictionary<NoiseIndex, byte[]> buffers = GenerateNoiseBuffers(cameraZoomedSize);
+
+      _lastMiddleIndex = GetBufferMiddleIndex(cameraZoomedSize);
+      _lastMiddleBufferValues = buffers.ToDictionary(e => e.Key, e => e.Value[_lastMiddleIndex]);
+
+      GetBiomeBuffer(cameraZoomedSize, buffers);
+
+    }
+
+    private void GetBiomeBuffer(V2I cameraZoomedSize, Dictionary<NoiseIndex, byte[]> buffers)
+    {
+      byte[] biomeBuffer = new byte[cameraZoomedSize.X * cameraZoomedSize.Y];
       byte[] colorBuffer = new byte[cameraZoomedSize.X * cameraZoomedSize.Y * 3];
 
       var activeColorMap = BiomeConstants.COLOR_TABLE;
 
-      void fillBuffers(int i, byte biome)
+      void fillBuffers(int i)
       {
-        buffer[i] = biome;
-        byte[] biomeColor = activeColorMap[biome];
+        biomeBuffer[i] = CalculateSingleBiome(i, buffers);
+        byte[] biomeColor = activeColorMap[biomeBuffer[i]];
         colorBuffer[i * 3] = biomeColor[0];
         colorBuffer[i * 3 + 1] = biomeColor[1];
         colorBuffer[i * 3 + 2] = biomeColor[2];
       }
 
-      Parallel.For(0, terrainElevationBuffer.Length, i => fillBuffers(i, CalculateSingleBiome(terrainElevationBuffer[i], continentElevationBuffer[i], landmassBuffer[i], heatBuffer[i], moistureBuffer[i])));
+      int bufferSize = buffers[NoiseIndex.TerrainElevation].Length;
+      Parallel.For(0, bufferSize, fillBuffers);
 
-      cachedMap = buffer;
+      cachedMap = biomeBuffer;
       cachedColorMap = colorBuffer;
 
     }
 
     private static int GetBufferMiddleIndex(V2I cameraZoomedSize) => (int)(cameraZoomedSize.Y / 2.0 * cameraZoomedSize.X + cameraZoomedSize.X / 2.0);
 
-    private static byte CalculateSingleBiome(byte terrainHeight, byte continentHeight, byte landmassHeight, byte heat, byte moist)
+    private static byte CalculateSingleBiome(int i, Dictionary<NoiseIndex, byte[]> buffers)
     {
+      byte continentHeight = buffers[NoiseIndex.ContinentElevation][i];
+      byte terrainHeight = buffers[NoiseIndex.TerrainElevation][i];
+      byte heat = buffers[NoiseIndex.Heat][i];
+      byte moist = buffers[NoiseIndex.Moisture][i];
+      byte landmassHeight = buffers[NoiseIndex.LandmassElevation][i];
+
       int elevation = CalcElevation(terrainHeight, continentHeight, landmassHeight);
 
       return (elevation) switch
