@@ -1,4 +1,4 @@
 # Godot 4+ specific ignores
 .godot/
 **/*.old
-infiniteWorldmap.csproj.old.1
+infiniteWorldmap.csproj.old.*
