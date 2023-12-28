@@ -6,8 +6,8 @@ extends Node
 # The create_Fastnoiselite_datasource() method initializes the noise configuration and generators for the FastNoiseLiteDatasource object.
 
 const MapSession=preload("map_session.gd")
-const FastNoiseLiteDatasource=preload("fastnoiselite_datasource.gd")
-const SharpNoiseLiteDatasource=preload("sharpnoiselite_datasource.gd")
+const FastNoiseLiteDatasource=preload("gd/fastnoiselite_datasource.gd")
+const SharpNoiseLiteDatasource=preload("mono/sharpnoiselite_datasource.gd")
 
 # Creates a new MapSession object with default values.
 static func create_session() -> MapSession:

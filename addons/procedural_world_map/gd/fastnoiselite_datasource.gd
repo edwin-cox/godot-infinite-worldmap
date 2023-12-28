@@ -7,7 +7,7 @@ extends ProceduralWorldDatasource
 # The class also provides a custom color map and an area info cache to store information about each area on the world map.
 
 # Import the constants for the biomes.
-const BConsts=preload("biome_constants.gd")
+const BConsts=preload("../biome_constants.gd")
 
 # Define variables to store the custom color map, cached map data, cached color map, and area info cache.
 var custom_color_map=null

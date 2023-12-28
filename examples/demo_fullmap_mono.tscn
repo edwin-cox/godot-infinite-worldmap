@@ -5,7 +5,7 @@
 [sub_resource type="GDScript" id="GDScript_7ccps"]
 script/source = "extends Control
 
-const SharpNoiseLiteDS=preload(\"res://addons/procedural_world_map/sharpnoiselite_datasource.gd\")
+const SharpNoiseLiteDS=preload(\"res://addons/procedural_world_map/mono/sharpnoiselite_datasource.gd\")
 
 @onready var worldmap:ProceduralWorldMap=$HBoxContainer/worldmap
 var datasource:SharpNoiseLiteDS :
@@ -91,7 +91,7 @@ func _on_seed_edit_value_changed(value):
 	worldmap.refresh()
 "
 
-[sub_resource type="Shader" id="Shader_7qwl4"]
+[sub_resource type="Shader" id="Shader_w7nr5"]
 code = "
 shader_type canvas_item;
 uniform sampler2D DATA;
@@ -102,8 +102,8 @@ void fragment() {
 }
 "
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_migmo"]
-shader = SubResource("Shader_7qwl4")
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nrmk6"]
+shader = SubResource("Shader_w7nr5")
 shader_parameter/tint = null
 
 [node name="DemoFullMap" type="Control"]
@@ -124,7 +124,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="worldmap" type="ColorRect" parent="HBoxContainer"]
-material = SubResource("ShaderMaterial_migmo")
+material = SubResource("ShaderMaterial_nrmk6")
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("1_o1her")
