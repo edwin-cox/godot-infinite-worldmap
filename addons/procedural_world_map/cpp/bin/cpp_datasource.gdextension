@@ -1,0 +1,8 @@
+[configuration]
+
+entry_symbol = "cpp_worldmap_library_init"
+compatibility_minimum = "4.2.1"
+
+[libraries]
+
+linux.debug.x86_64 = "res://addons/procedural_world_map/cpp/bin/libcpp_datasource.linux.template_debug.x86_64.so"

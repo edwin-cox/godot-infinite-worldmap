@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://examples/benchmark.gd" id="1_r1eda"]
 [ext_resource type="Script" path="res://addons/procedural_world_map/worldmap.gd" id="1_xc8mp"]
 
-[sub_resource type="Shader" id="Shader_nimaq"]
+[sub_resource type="Shader" id="Shader_v17xq"]
 code = "
 shader_type canvas_item;
 uniform sampler2D DATA;
@@ -14,8 +14,8 @@ void fragment() {
 }
 "
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_vkr6n"]
-shader = SubResource("Shader_nimaq")
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_004c4"]
+shader = SubResource("Shader_v17xq")
 shader_parameter/tint = null
 
 [node name="Benchmark" type="Control"]
@@ -37,13 +37,20 @@ grow_vertical = 2
 
 [node name="WorldMap" type="ColorRect" parent="HBoxContainer"]
 unique_name_in_owner = true
-material = SubResource("ShaderMaterial_vkr6n")
+material = SubResource("ShaderMaterial_004c4")
 layout_mode = 2
 size_flags_horizontal = 3
 script = ExtResource("1_xc8mp")
 camera_size = Vector2i(4096, 4096)
 zoom = 0.5
 fast_resolution_index = 0
+
+[node name="aaa" type="TextureRect" parent="HBoxContainer/WorldMap"]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 76.0
+offset_right = 765.0
+offset_bottom = 528.0
 
 [node name="Panel" type="Panel" parent="HBoxContainer"]
 custom_minimum_size = Vector2(250, 0)
@@ -98,6 +105,10 @@ text = "GDScript"
 layout_mode = 2
 text = "C#"
 
+[node name="Button" type="Button" parent="HBoxContainer/Panel/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "C++"
+
 [node name="RunAll" type="Button" parent="HBoxContainer/Panel/MarginContainer/VBoxContainer"]
 layout_mode = 2
 text = "All"
@@ -125,4 +136,5 @@ color = Color(1, 1, 1, 0.517647)
 
 [connection signal="pressed" from="HBoxContainer/Panel/MarginContainer/VBoxContainer/RunGDScript" to="." method="_on_run_gd_script_pressed"]
 [connection signal="pressed" from="HBoxContainer/Panel/MarginContainer/VBoxContainer/RunCSharp" to="." method="_on_run_c_sharp_pressed"]
+[connection signal="pressed" from="HBoxContainer/Panel/MarginContainer/VBoxContainer/Button" to="." method="_on_button_pressed"]
 [connection signal="pressed" from="HBoxContainer/Panel/MarginContainer/VBoxContainer/RunAll" to="." method="_on_run_all_pressed"]

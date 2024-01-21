@@ -8,6 +8,7 @@ extends Node
 const MapSession=preload("map_session.gd")
 const FastNoiseLiteDatasource=preload("gd/fastnoiselite_datasource.gd")
 const SharpNoiseLiteDatasource=preload("mono/sharpnoiselite_datasource.gd")
+const CppDatasource=preload("cpp/cpp_datasource.gd")
 
 # Creates a new MapSession object with default values.
 static func create_session() -> MapSession:
@@ -86,6 +87,28 @@ static func create_Fastnoiselite_datasource(seed:int) -> ProceduralWorldDatasour
 
 static func create_Sharpnoiselite_datasource(seed:int) -> ProceduralWorldDatasource:
 	var datasource:=SharpNoiseLiteDatasource.new()
+	datasource.noise_config=[]
+	datasource.noise_config.resize(5)
+	datasource.seed=seed
+	
+	var simplex:=FastNoiseLite.TYPE_SIMPLEX
+	datasource.noise_config[datasource.noise_idx_terrain_elevation]=create_simplex_noise_config(seed,0,6,0.0011,0.5,4.0)
+	datasource.noise_config[datasource.noise_idx_continent_elevation]=create_simplex_noise_config(seed,0,9,0.0001,1,1)
+	datasource.noise_config[datasource.noise_idx_moisture]=create_simplex_noise_config(seed,1,4,0.05,3,0.4)
+	datasource.noise_config[datasource.noise_idx_heat]=create_simplex_noise_config(seed,2,4,0.05,3,0.4)
+	datasource.noise_config[datasource.noise_idx_landmass_elevation]=create_continent_noise(seed,0)
+	
+	datasource.noise_generators=[]
+	datasource.noise_generators.resize(datasource.noise_config.size())
+	for i in datasource.noise_config.size():
+		datasource.noise_generators[i]=create_noise_generator(datasource.noise_config[i])
+	
+	datasource.init_noises()
+	
+	return datasource
+
+static func create_cpp_datasource(seed:int) -> ProceduralWorldDatasource:
+	var datasource:=CppDatasource.new()
 	datasource.noise_config=[]
 	datasource.noise_config.resize(5)
 	datasource.seed=seed

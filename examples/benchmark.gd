@@ -1,10 +1,10 @@
 extends Control
 
-enum DS {GDSCRIPT, CSHARP}
+enum DS {GDSCRIPT, CSHARP, CPP}
 
 var datasources:Array[ProceduralWorldDatasource]
-var time_results:=[-1.0,-1.0]
-var duration_results:=[-1.0,-1.0]
+var time_results:=[-1.0,-1.0, -1.0]
+var duration_results:=[-1.0,-1.0, -1.0]
 @onready var worldmap:ProceduralWorldMap=$HBoxContainer/WorldMap
 
 var precision:int : 
@@ -22,6 +22,7 @@ func _ready():
 	datasources=[]
 	datasources.append(worldmap.SessionFactory.create_Fastnoiselite_datasource(0))
 	datasources.append(worldmap.SessionFactory.create_Sharpnoiselite_datasource(0))
+	datasources.append(worldmap.SessionFactory.create_cpp_datasource(0))
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
@@ -54,12 +55,14 @@ func refresh_results_label():
 	[b]Results[/b]
 	GDScript:\t%.3fs
 	C#:\t\t\t\t%.3fs
+	CPP:\t\t\t%.3fs
 	-----------------------------
 	[b]Total results[/b]
 	GDScript:\t%.3fs
 	C#:\t\t\t\t%.3fs	
+	CPP:\t\t\t%.3fs
 	"""
-	%ResultText.text=template % [screen_size.x,screen_size.y, iteration,time_results[0],time_results[1], duration_results[0], duration_results[1]]
+	%ResultText.text=template % [screen_size.x,screen_size.y, iteration,time_results[0],time_results[1],time_results[2], duration_results[0], duration_results[1], duration_results[2]]
 
 
 func _on_run_gd_script_pressed():
@@ -76,5 +79,18 @@ func _toggle_on_load(loading:bool):
 
 
 func _on_run_all_pressed():
-	for ds_idx in range(2):
+	for ds_idx in range(3):
 		_run_benchmark(ds_idx)
+
+
+func _on_button_pressed():
+	_run_benchmark(DS.CPP)
+	#var n=FastNoiseLite.new()
+	#n.seed=1337
+	#n.noise_type=FastNoiseLite.TYPE_SIMPLEX
+	#var w=Worldmap.new()
+	#for i in range(5):
+		#w.set_noise(i,n)
+	#var t=w.get_biome_image(Vector2i(1024,1024))
+	#print("worldmap:",t)
+	#$HBoxContainer/WorldMap/aaa.texture=t
