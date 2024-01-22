@@ -1,5 +1,7 @@
 #include "worldmap.h"
 #include <godot_cpp/core/class_db.hpp>
+#include <future>
+#include <chrono>
 
 using namespace godot;
 
@@ -59,12 +61,21 @@ void Worldmap::set_noise(int index, Ref<FastNoiseLite> p_noise)
 std::map<byte, PackedByteArray> Worldmap::generate_noise_buffers(Vector2i p_camera_size)
 {
   std::map<byte, PackedByteArray> buffers;
+  std::vector<std::future<void>> futures;
+  std::mutex mtx;
 
   for (int i = 0; i < noises.size(); i++)
   {
-    PackedByteArray noiseData = get_noise_image(i, p_camera_size.x, p_camera_size.y);
+    futures.push_back(std::async(std::launch::async, [this, &buffers, &mtx, i, p_camera_size]()
+                                 {
+      PackedByteArray noiseData = get_noise_image(i, p_camera_size.x, p_camera_size.y);
+      std::lock_guard<std::mutex> lock(mtx);
+      buffers.insert(std::pair<byte, PackedByteArray>(i, noiseData)); }));
+  }
 
-    buffers.insert(std::pair<byte, PackedByteArray>(i, noiseData));
+  for (auto &e : futures)
+  {
+    e.get();
   }
 
   return buffers;
@@ -95,19 +106,19 @@ byte Worldmap::get_current_elevation()
 
 void Worldmap::get_biome_buffer(Vector2i p_camera_size, std::map<byte, PackedByteArray> &p_buffers)
 {
+  int size = p_camera_size.x * p_camera_size.y;
+
   PackedByteArray biome_buffer = PackedByteArray();
-  biome_buffer.resize(p_camera_size.x * p_camera_size.y);
+  biome_buffer.resize(size);
 
   PackedByteArray color_buffer = PackedByteArray();
-  color_buffer.resize(p_camera_size.x * p_camera_size.y * 3);
+  color_buffer.resize(size * 3);
 
   PackedByteArray input = p_buffers[0];
-  // iterate over input and write its value in biome_buffer
   for (int i = 0; i < input.size(); i++)
   {
     byte biome = calculate_single_biome(i, p_buffers);
     biome_buffer[i] = biome;
-    // get color from biome mapper
     std::array<uint8_t, 3> color = COLOR_TABLE.at(static_cast<BiomeType>(biome));
     color_buffer[i * 3] = color[0];
     color_buffer[i * 3 + 1] = color[1];
@@ -226,6 +237,15 @@ byte Worldmap::calc_shore_biome(byte heat, byte moist)
   else
     return static_cast<byte>(BiomeType::Grass);
 }
+
+int64_t Worldmap::get_noise_benchmark(int w, int h)
+{
+  auto start = std::chrono::high_resolution_clock::now();
+  generate_noise_buffers(Vector2i(w, h));
+  auto end = std::chrono::high_resolution_clock::now();
+  return std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+}
+
 void Worldmap::_bind_methods()
 {
   ClassDB::bind_method(D_METHOD("get_biome_image", "camera_size"), &Worldmap::get_biome_image);
@@ -234,4 +254,5 @@ void Worldmap::_bind_methods()
   ClassDB::bind_method(D_METHOD("get_current_heat"), &Worldmap::get_current_heat);
   ClassDB::bind_method(D_METHOD("get_current_moisture"), &Worldmap::get_current_moisture);
   ClassDB::bind_method(D_METHOD("get_current_elevation"), &Worldmap::get_current_elevation);
+  ClassDB::bind_method(D_METHOD("get_noise_benchmark", "w", "h"), &Worldmap::get_noise_benchmark);
 }

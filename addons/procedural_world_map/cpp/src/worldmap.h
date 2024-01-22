@@ -67,6 +67,7 @@ public:
   Ref<ImageTexture> get_biome_image(Vector2i p_camera_size);
 
   void set_noise(int index, Ref<FastNoiseLite> p_noise);
+  int64_t get_noise_benchmark(int w, int h);
 };
 
 #endif // WORLDMAP_CLASS_H
