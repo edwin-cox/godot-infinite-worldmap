@@ -1,0 +1,233 @@
+[gd_scene load_steps=5 format=3 uid="uid://cltqmtjk00bb2"]
+
+[ext_resource type="Script" path="res://addons/procedural_world_map/worldmap.gd" id="1_d1s1n"]
+
+[sub_resource type="GDScript" id="GDScript_sfb5b"]
+script/source = "extends Control
+
+const CPPDS=preload(\"res://addons/procedural_world_map/cpp/cpp_datasource.gd\")
+
+@onready var worldmap:ProceduralWorldMap=$HBoxContainer/worldmap
+var datasource:CPPDS :
+	set (value):
+		worldmap.datasource=value
+	get:
+		return worldmap.datasource
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	datasource=worldmap.SessionFactory.create_cpp_datasource(0)
+	# tip: setting the incremental quality here allows to keep low resolution for 
+	# the component in the editor, which keeps the memory low and prevents
+	# possible side effects with the incremental loop inside the editor.
+	worldmap.incremental_quality=true
+	worldmap.refresh()
+
+
+# Basic controls for browsing the world and zoom in/out
+func _process(delta):
+	var map_changed=false
+	var offset_change:=Vector2.ZERO
+	if Input.is_action_pressed(\"ui_up\"):
+		offset_change.y=-1
+	elif Input.is_action_pressed(\"ui_down\"):
+		offset_change.y=1
+	
+	if Input.is_action_pressed(\"ui_left\"):
+		offset_change.x=-1
+	elif Input.is_action_pressed(\"ui_right\"):
+		offset_change.x=1
+	
+	if Input.is_action_pressed(\"zoom_out\"):
+		$HBoxContainer/info_panel/ItemList/zoom_slider.value*=0.9
+		map_changed=true
+	elif Input.is_action_pressed(\"zoom_in\"):
+		$HBoxContainer/info_panel/ItemList/zoom_slider.value*=1.1
+		map_changed=true
+	
+	if map_changed or offset_change != Vector2.ZERO:
+		worldmap.coordinates+=offset_change*10*worldmap.relative_zoom_factor
+		worldmap.refresh()
+
+# Display informations about the world in a sidebar
+func update_gui():
+	$HBoxContainer/info_panel/ItemList/lon_edit.text=str(worldmap.coordinates.x)
+	$HBoxContainer/info_panel/ItemList/lat_edit.text=str(worldmap.coordinates.y)
+	$HBoxContainer/info_panel/ItemList/zoom_label.text=\"Zoom : \"+str(round(worldmap.zoom*100)/100)
+	
+	var current_info:ProceduralWorldAreaInfo=worldmap.current_area_info
+	
+	if current_info:
+		var biome_name=datasource.get_biome_name(current_info.biome)
+	
+		$HBoxContainer/info_panel/ItemList/info_text.text= \\
+			biome_name+\"\\n\" \\
+			+\"Alt: \"+str(current_info.altitude*10)+\" m\\n\" \\
+			+\"heat: \"+str(round(current_info.heat/5.12))+\"°C\\n\" \\
+			+\"moisture: \"+str(round(current_info.moisture/2.55))+\"%\"
+	
+
+func _on_lon_edit_text_submitted(new_text):
+	worldmap.coordinates.x=float(new_text)
+	worldmap.refresh()
+
+
+func _on_lat_edit_text_submitted(new_text):
+	worldmap.coordinates.y=float(new_text)
+	worldmap.refresh()
+
+# Callback from the worldmap when the component finished rendering
+func _on_worldmap_update():
+	update_gui()
+
+
+func _on_zoom_slider_value_changed(value):
+	worldmap.zoom=value
+	worldmap.refresh()
+
+
+func _on_seed_edit_value_changed(value):
+	datasource.seed=value
+	worldmap.refresh()
+"
+
+[sub_resource type="Shader" id="Shader_dohxn"]
+code = "
+shader_type canvas_item;
+uniform sampler2D DATA;
+uniform vec4 tint;
+
+void fragment() {
+	COLOR = texture(DATA, UV) * tint; 
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7dggb"]
+shader = SubResource("Shader_dohxn")
+shader_parameter/tint = null
+
+[node name="DemoFullMap" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_sfb5b")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="worldmap" type="ColorRect" parent="HBoxContainer"]
+material = SubResource("ShaderMaterial_7dggb")
+layout_mode = 2
+size_flags_horizontal = 3
+script = ExtResource("1_d1s1n")
+refresh_timeout = 0.2
+
+[node name="cursor_vertical" type="ColorRect" parent="HBoxContainer/worldmap"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -1.5
+offset_top = -10.0
+offset_right = 1.5
+offset_bottom = 10.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="cursor_horizontal" type="ColorRect" parent="HBoxContainer/worldmap"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -10.0
+offset_top = -1.5
+offset_right = 10.0
+offset_bottom = 1.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="info_panel" type="Panel" parent="HBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="ItemList" type="VBoxContainer" parent="HBoxContainer/info_panel"]
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.05
+anchor_top = 0.016
+anchor_right = 0.95
+anchor_bottom = 0.984
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="seed_label" type="Label" parent="HBoxContainer/info_panel/ItemList"]
+layout_mode = 2
+text = "Seed"
+
+[node name="seed_edit" type="SpinBox" parent="HBoxContainer/info_panel/ItemList"]
+layout_mode = 2
+rounded = true
+allow_greater = true
+
+[node name="lon_label" type="Label" parent="HBoxContainer/info_panel/ItemList"]
+layout_mode = 2
+text = "Longitude"
+
+[node name="lon_edit" type="LineEdit" parent="HBoxContainer/info_panel/ItemList"]
+layout_mode = 2
+text = "0.0"
+placeholder_text = "vcbncvbn"
+
+[node name="lat_label" type="Label" parent="HBoxContainer/info_panel/ItemList"]
+layout_mode = 2
+text = "Latitude"
+
+[node name="lat_edit" type="LineEdit" parent="HBoxContainer/info_panel/ItemList"]
+layout_mode = 2
+text = "0.0"
+
+[node name="zoom_label" type="Label" parent="HBoxContainer/info_panel/ItemList"]
+layout_mode = 2
+text = "Zoom"
+
+[node name="zoom_slider" type="HSlider" parent="HBoxContainer/info_panel/ItemList"]
+layout_mode = 2
+min_value = 0.01
+max_value = 1000.0
+step = 0.01
+value = 10.0
+exp_edit = true
+
+[node name="info_label" type="Label" parent="HBoxContainer/info_panel/ItemList"]
+layout_mode = 2
+text = "Info"
+
+[node name="info_text" type="TextEdit" parent="HBoxContainer/info_panel/ItemList"]
+layout_mode = 2
+size_flags_vertical = 3
+editable = false
+
+[node name="RichTextLabel" type="RichTextLabel" parent="HBoxContainer/info_panel/ItemList"]
+layout_mode = 2
+text = "Pg Up/Pg Dwn : Zoom
+Arrows : Pan"
+fit_content = true
+
+[connection signal="update" from="HBoxContainer/worldmap" to="." method="_on_worldmap_update" flags=3]
+[connection signal="value_changed" from="HBoxContainer/info_panel/ItemList/seed_edit" to="." method="_on_seed_edit_value_changed" flags=3]
+[connection signal="text_submitted" from="HBoxContainer/info_panel/ItemList/lon_edit" to="." method="_on_lon_edit_text_submitted" flags=3]
+[connection signal="text_submitted" from="HBoxContainer/info_panel/ItemList/lat_edit" to="." method="_on_lat_edit_text_submitted" flags=3]
+[connection signal="value_changed" from="HBoxContainer/info_panel/ItemList/zoom_slider" to="." method="_on_zoom_slider_value_changed"]
