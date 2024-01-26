@@ -11,13 +11,13 @@ config_version=5
 [application]
 
 config/name="infinite worldmap"
-run/main_scene="res://examples/demo_fullmap.tscn"
-config/features=PackedStringArray("4.2", "Forward Plus")
+run/main_scene="res://examples/demo_fullmap_mono.tscn"
+config/features=PackedStringArray("4.2", "C#", "Forward Plus")
 config/icon="res://icon.png"
 
 [dotnet]
 
-project/assembly_name="infinite worldmap"
+project/assembly_name="infiniteWorldmap"
 
 [editor_plugins]
 

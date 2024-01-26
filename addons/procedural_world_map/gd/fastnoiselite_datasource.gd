@@ -7,7 +7,7 @@ extends ProceduralWorldDatasource
 # The class also provides a custom color map and an area info cache to store information about each area on the world map.
 
 # Import the constants for the biomes.
-const BConsts=preload("biome_constants.gd")
+const BConsts=preload("../biome_constants.gd")
 
 # Define variables to store the custom color map, cached map data, cached color map, and area info cache.
 var custom_color_map=null
@@ -17,50 +17,16 @@ var area_info_cache=[]
 
 var detail:=1.0 : set = set_detail
 
-# Define a class to store the noise configuration.
-class NoiseObject:
-	var seed_nr:int
-	var seed_offset:int
-	var octaves:int
-	var period:float
-	var initial_period:float
-	var persistence:float
-	var lacunarity:float
-	
-	func _init(seed_nr:int,seed_offset:int,octaves:int,period:float,persistence:float,lacunarity:float):
-		self.seed_nr=seed_nr
-		self.seed_offset=seed_offset
-		self.octaves=octaves
-		self.period=period
-		self.initial_period=period
-		self.persistence=persistence
-		self.lacunarity=lacunarity
-
 # Define variables to store the noise configuration and generators.
-var noise_config:Array[NoiseObject]
+var noise_config:Array[Dictionary]
 var noise_generators:Array[FastNoiseLite]
 
 # Define constants to store the indices of the noise generators.
-const noise_idx_main_elevation=0
-const noise_idx_elevation=1
+const noise_idx_continent_elevation=0
+const noise_idx_terrain_elevation=1
 const noise_idx_heat=2
 const noise_idx_moisture=3
-
-### CONSTRUCTORS #################
-
-# Define a static method to create a new noise generator based on the given configuration.
-static func create_noise_generator(config:NoiseObject)->FastNoiseLite:
-	var noise:=FastNoiseLite.new()
-	
-	noise.noise_type=FastNoiseLite.TYPE_SIMPLEX
-	noise.seed=config.seed_nr+config.seed_offset
-	noise.fractal_octaves=config.octaves
-	noise.frequency=config.period
-	noise.fractal_gain=config.persistence
-	noise.fractal_lacunarity=config.lacunarity
-
-	return noise
-
+const noise_idx_landmass_elevation=4
 
 ### GETTERS SETTERS #######
 
@@ -80,12 +46,12 @@ func set_zoom(value:float):
 	zoom=value
 	for i in noise_generators.size():
 		var noise=noise_generators[i]
-		noise.frequency=noise_config[i].period/zoom
+		noise.frequency=noise_config[i].frequency/zoom
 
 # Define a method to set the detail level and update the noise generator for elevation.
 func set_detail(value:float):
 	detail=value
-	noise_generators[noise_idx_elevation].fractal_lacunarity=noise_config[noise_idx_elevation].lacunarity*value
+	noise_generators[noise_idx_terrain_elevation].fractal_lacunarity=noise_config[noise_idx_terrain_elevation].fractal_lacunarity*value
 
 # Define a method to set the seed and update the noise generators.
 func set_seed(value:int):
@@ -101,18 +67,20 @@ func get_noise_image(noise_idx:int,w:int,h:int)->PackedByteArray:
 
 # Define a method to regenerate the world map data based on the current noise configuration and generators.
 func regenerate_map(camera_zoomed_size:Vector2i):
-	var elev_buffer:=get_noise_image(noise_idx_elevation,camera_zoomed_size.x,camera_zoomed_size.y)
-	var main_elev_buffer:=get_noise_image(noise_idx_main_elevation,camera_zoomed_size.x,camera_zoomed_size.y)
+	var terrain_elevation_buffer:=get_noise_image(noise_idx_terrain_elevation,camera_zoomed_size.x,camera_zoomed_size.y)
+	var continent_elevation_buffer:=get_noise_image(noise_idx_continent_elevation,camera_zoomed_size.x,camera_zoomed_size.y)
 	var heat_buffer:=get_noise_image(noise_idx_heat,camera_zoomed_size.x,camera_zoomed_size.y)
 	var moist_buffer:=get_noise_image(noise_idx_moisture,camera_zoomed_size.x,camera_zoomed_size.y)
+	var landmass_elevation_buffer:=get_noise_image(noise_idx_landmass_elevation,camera_zoomed_size.x,camera_zoomed_size.y)
 
 	# Clear the area info cache.
 	while(area_info_cache.size()>0):
 		var ai=area_info_cache.pop_front()
-		ai.queue_free()
+		if is_instance_valid(ai):
+			ai.queue_free()
 
 	# Get the biome buffer and store the color map, area info, and map data in the appropriate variables.
-	var biome_result=get_biome_buffer(camera_zoomed_size,elev_buffer,main_elev_buffer,heat_buffer,moist_buffer)
+	var biome_result=get_biome_buffer(camera_zoomed_size,terrain_elevation_buffer,continent_elevation_buffer,heat_buffer,moist_buffer,landmass_elevation_buffer)
 	cached_color_map=biome_result[0]
 	current_area_info=biome_result[1]
 	area_info_cache.append(biome_result[1])
@@ -124,7 +92,7 @@ func get_biome_image(camera_zoomed_size:Vector2i):
 	return create_texture_from_buffer(cached_color_map, camera_zoomed_size)
 
 # Define a method to get the biome buffer based on the current noise configuration and generators.
-func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,main_height_buffer:PackedByteArray,heat_buffer:PackedByteArray,moisture_buffer:PackedByteArray):
+func get_biome_buffer(camera_size:Vector2,terrain_height_buffer:PackedByteArray,continent_height_buffer:PackedByteArray,heat_buffer:PackedByteArray,moisture_buffer:PackedByteArray,landmass_elevation_buffer:PackedByteArray):
 	var active_color_map=BConsts.COLOR_TABLE
 	if self.custom_color_map!=null:
 		active_color_map=self.custom_color_map
@@ -133,18 +101,23 @@ func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,main_hei
 	var color_buffer:=PackedByteArray()
 	var middle_pos:=floori(camera_size.y/2.0*camera_size.x+camera_size.x/2.0)
 	var current_biome_info:ProceduralWorldAreaInfo=null
-	for i in range(height_buffer.size()):
-		var main_height := main_height_buffer[i]
-		var height := height_buffer[i]
-		var elevation:int=( min(height*height+height,255) + 2 * main_height*main_height ) / 3
+	for i in range(terrain_height_buffer.size()):
+		var continent_height := continent_height_buffer[i]
+		var height := terrain_height_buffer[i]
+		var landmass_height := landmass_elevation_buffer[i]
 		var heat:=heat_buffer[i]
 		var moisture:=moisture_buffer[i]
+			
+		var elevation:int=(6*continent_height*0.85 + 3*landmass_height*1.8+height)/10
+
+		if elevation>=BConsts.altShallowWater:
+			elevation=(3*continent_height+height*height/140)/4 - 5
 
 		var biome_idx
-		if(height<BConsts.altSand):
-			if(height<BConsts.altDeepWater):
+		if(elevation<BConsts.altSand):
+			if(elevation<BConsts.altDeepWater):
 				biome_idx= BConsts.cDeepWater;
-			elif(height<BConsts.altShallowWater):
+			elif(elevation<BConsts.altShallowWater):
 				biome_idx= BConsts.cShallowWater;
 			else:
 				if heat<BConsts.COLDER:
@@ -158,7 +131,7 @@ func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,main_hei
 						biome_idx= BConsts.cSavanna;
 					else:
 						biome_idx= BConsts.cGrass
-		elif(height<BConsts.altForest):
+		elif(elevation<BConsts.altForest):
 			if (heat<BConsts.COLDEST):
 				biome_idx= BConsts.cSnow;
 			elif(heat<BConsts.COLDER):
@@ -187,14 +160,14 @@ func get_biome_buffer(camera_size:Vector2,height_buffer:PackedByteArray,main_hei
 				else:
 					biome_idx= BConsts.cRainForest;
 
-		elif(height<BConsts.altRock):
+		elif(elevation<BConsts.altRock):
 			biome_idx= BConsts.cRock;
 		else:
 			biome_idx= BConsts.cSnow;
-
+		
 		if BConsts.COLOR_TABLE.has(biome_idx):
 			if i==middle_pos:
-				current_biome_info=ProceduralWorldAreaInfo.new(biome_idx,heat,moisture,height-BConsts.altShallowWater,BConsts.COLOR_TABLE[biome_idx])
+				current_biome_info=ProceduralWorldAreaInfo.new(biome_idx,heat,moisture,elevation-BConsts.altShallowWater,BConsts.COLOR_TABLE[biome_idx])
 			buffer.append(biome_idx)
 			color_buffer.append_array(active_color_map[biome_idx])
 		else:

@@ -79,6 +79,8 @@ var tint:Color : set = set_tint, get = get_tint
 # called when the map is done rendering. It is called multiple times when rendering with incremental quality.
 signal update
 
+signal finished
+
 # ----- COMPUTED ---------------------------------------
 
 # A boolean value indicating whether the incremental rendering timer is running.
@@ -118,7 +120,8 @@ func set_cam_size(value:Vector2i):
 
 func set_refresh_timeout(value:float):
 	refresh_timeout=value
-	incremental_timer.wait_time=refresh_timeout
+	if incremental_timer:
+		incremental_timer.wait_time=refresh_timeout
 
 func set_resolutions(value:Array):
 	resolutions=value
@@ -134,7 +137,6 @@ func get_detail():
 
 func set_datasource(ds:ProceduralWorldDatasource):
 	session.datasource=ds
-	refresh()
 
 func get_datasource()->ProceduralWorldDatasource:
 	return session.datasource
@@ -202,7 +204,6 @@ func _update_map_task(mat:ShaderMaterial,res_idx:int,params,is_incremental:bool=
 	# abort rendering if task was cancelled
 	var task_id:int=params["task_id"]
 	if thread_cancel.has(task_id):
-		print("has thread_cancel")
 		thread_cancel.erase(task_id)
 		return
 	else:
@@ -214,6 +215,9 @@ func _update_map_task(mat:ShaderMaterial,res_idx:int,params,is_incremental:bool=
 	elif res_idx<=0:
 		# stop all incremental rendering when the highest resolution is reached
 		image_changed=false
+		emit_signal("finished")
+	else:
+		emit_signal("finished")
 	emit_signal("update")
 
 func _start_incremental_update_map_task(res_idx):
